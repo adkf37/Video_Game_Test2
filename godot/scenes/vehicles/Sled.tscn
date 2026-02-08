@@ -23,7 +23,5 @@ mesh = SubResource("sub_box")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("sub_shape")
 
-[node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.866, -0.5, 0, 0.5, 0.866, 0, 6, 12)
-current = true
-fov = 75.0
+[node name="CameraAnchor" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 4)

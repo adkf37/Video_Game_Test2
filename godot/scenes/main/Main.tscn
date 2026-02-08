@@ -1,6 +1,8 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/vehicles/Sled.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/tracks/Track_Alpine01.tscn" id="2"]
+[ext_resource type="Script" path="res://scripts/camera/ChaseCamera.gd" id="3"]
 
 [sub_resource type="Sky" id="sky"]
 
@@ -11,16 +13,6 @@ sky = SubResource("sky")
 ambient_light_source = 3
 ambient_light_color = Color(0.9, 0.95, 1, 1)
 ambient_light_energy = 1.0
-
-[sub_resource type="StandardMaterial3D" id="sub_ground_mat"]
-albedo_color = Color(0.9, 0.93, 0.97, 1)
-
-[sub_resource type="PlaneMesh" id="sub_plane"]
-size = Vector2(200, 200)
-material = SubResource("sub_ground_mat")
-
-[sub_resource type="BoxShape3D" id="sub_ground_collision"]
-size = Vector3(200, 0.1, 200)
 
 [node name="Main" type="Node3D"]
 
@@ -33,14 +25,13 @@ light_color = Color(1, 0.98, 0.95, 1)
 light_energy = 1.5
 shadow_enabled = true
 
-[node name="Ground" type="StaticBody3D" parent="."]
-
-[node name="GroundMesh" type="MeshInstance3D" parent="Ground"]
-mesh = SubResource("sub_plane")
-
-[node name="GroundCollision" type="CollisionShape3D" parent="Ground"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
-shape = SubResource("sub_ground_collision")
+[node name="Track" parent="." instance=ExtResource("2")]
 
 [node name="PlayerSled" parent="." instance=ExtResource("1")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0.5, 50)
+
+[node name="ChaseCamera" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.866, -0.5, 0, 0.5, 0.866, 30, 6, 62)
+current = true
+fov = 75.0
+script = ExtResource("3")

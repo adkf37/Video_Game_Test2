@@ -1,0 +1,296 @@
+[gd_scene load_steps=12 format=3]
+
+[sub_resource type="StandardMaterial3D" id="mat_snow"]
+albedo_color = Color(0.92, 0.95, 0.98, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_road"]
+albedo_color = Color(0.35, 0.38, 0.42, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_wall"]
+albedo_color = Color(0.5, 0.55, 0.6, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_tree_trunk"]
+albedo_color = Color(0.4, 0.28, 0.15, 1)
+
+[sub_resource type="StandardMaterial3D" id="mat_tree_leaves"]
+albedo_color = Color(0.15, 0.45, 0.2, 1)
+
+[sub_resource type="PlaneMesh" id="ground_mesh"]
+size = Vector2(300, 250)
+material = SubResource("mat_snow")
+
+[sub_resource type="BoxShape3D" id="ground_shape"]
+size = Vector3(300, 0.2, 250)
+
+[sub_resource type="BoxMesh" id="wall_mesh"]
+size = Vector3(1, 2, 1)
+material = SubResource("mat_wall")
+
+[sub_resource type="CylinderMesh" id="trunk_mesh"]
+top_radius = 0.3
+bottom_radius = 0.4
+height = 4.0
+material = SubResource("mat_tree_trunk")
+
+[sub_resource type="SphereMesh" id="leaves_mesh"]
+radius = 2.0
+height = 3.5
+material = SubResource("mat_tree_leaves")
+
+[sub_resource type="BoxMesh" id="road_mesh"]
+size = Vector3(1, 0.05, 1)
+material = SubResource("mat_road")
+
+[node name="Track_Alpine01" type="Node3D"]
+
+[node name="Ground" type="StaticBody3D" parent="."]
+[node name="GroundMesh" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("ground_mesh")
+[node name="GroundCollision" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
+shape = SubResource("ground_shape")
+
+; ────────────────────────────────────────────────────
+; ROAD SURFACE — Oval loop: 2 straights + 4 curved corners
+; Track flows: Start → South straight → SW corner → West straight-ish
+;   → NW corner → North straight → NE corner → East straight → SE corner → back to Start
+; ────────────────────────────────────────────────────
+
+[node name="Road" type="Node3D" parent="."]
+
+; Bottom straight (south side, along X axis)
+[node name="Straight_South" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 50)
+mesh = SubResource("road_mesh")
+scale = Vector3(120, 1, 14)
+
+; Top straight (north side)
+[node name="Straight_North" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, -50)
+mesh = SubResource("road_mesh")
+scale = Vector3(120, 1, 14)
+
+; Left straight (west side, along Z axis)
+[node name="Straight_West" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -65, 0.03, 0)
+mesh = SubResource("road_mesh")
+scale = Vector3(14, 1, 120)
+
+; Right straight (east side)
+[node name="Straight_East" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 0.03, 0)
+mesh = SubResource("road_mesh")
+scale = Vector3(14, 1, 120)
+
+; Corner road fills (45-degree patches at each corner)
+[node name="Corner_SW" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, -50, 0.03, 40)
+mesh = SubResource("road_mesh")
+scale = Vector3(30, 1, 14)
+
+[node name="Corner_NW" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, -50, 0.03, -40)
+mesh = SubResource("road_mesh")
+scale = Vector3(30, 1, 14)
+
+[node name="Corner_NE" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, 50, 0.03, -40)
+mesh = SubResource("road_mesh")
+scale = Vector3(30, 1, 14)
+
+[node name="Corner_SE" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, 50, 0.03, 40)
+mesh = SubResource("road_mesh")
+scale = Vector3(30, 1, 14)
+
+; ────────────────────────────────────────────────────
+; WALLS — Outer boundary + Inner boundary
+; ────────────────────────────────────────────────────
+
+[node name="Walls" type="Node3D" parent="."]
+
+; === OUTER WALLS ===
+; South outer
+[node name="OuterWall_S" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 60)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_S"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(140, 1, 2)
+[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_S"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.467, 10, 0.008)
+
+; North outer
+[node name="OuterWall_N" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -60)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_N"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(140, 1, 2)
+[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_N"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.467, 10, 0.008)
+
+; West outer
+[node name="OuterWall_W" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -77, 1, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_W"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(2, 1, 130)
+[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_W"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.007, 10, 0.52)
+
+; East outer
+[node name="OuterWall_E" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 77, 1, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_E"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(2, 1, 130)
+[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_E"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.007, 10, 0.52)
+
+; === INNER WALLS (oval center island) ===
+; South inner
+[node name="InnerWall_S" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 40)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/InnerWall_S"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(95, 1, 2)
+[node name="Col" type="CollisionShape3D" parent="Walls/InnerWall_S"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.317, 10, 0.008)
+
+; North inner
+[node name="InnerWall_N" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -40)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/InnerWall_N"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(95, 1, 2)
+[node name="Col" type="CollisionShape3D" parent="Walls/InnerWall_N"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.317, 10, 0.008)
+
+; West inner
+[node name="InnerWall_W" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -52, 1, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/InnerWall_W"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(2, 1, 88)
+[node name="Col" type="CollisionShape3D" parent="Walls/InnerWall_W"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.007, 10, 0.352)
+
+; East inner
+[node name="InnerWall_E" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 1, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/InnerWall_E"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(2, 1, 88)
+[node name="Col" type="CollisionShape3D" parent="Walls/InnerWall_E"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.007, 10, 0.352)
+
+; === OUTER CORNER WALLS (diagonal) ===
+[node name="OuterWall_SW" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, -62, 1, 50)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_SW"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(30, 1, 2)
+[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_SW"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.1, 10, 0.008)
+
+[node name="OuterWall_NW" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, -62, 1, -50)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_NW"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(30, 1, 2)
+[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_NW"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.1, 10, 0.008)
+
+[node name="OuterWall_NE" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, 62, 1, -50)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_NE"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(30, 1, 2)
+[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_NE"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.1, 10, 0.008)
+
+[node name="OuterWall_SE" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, 62, 1, 50)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_SE"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(30, 1, 2)
+[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_SE"]
+shape = SubResource("ground_shape")
+scale = Vector3(0.1, 10, 0.008)
+
+; ────────────────────────────────────────────────────
+; LANDMARKS — Trees around the outside for navigation
+; ────────────────────────────────────────────────────
+
+[node name="Landmarks" type="Node3D" parent="."]
+
+[node name="Tree_01" type="Node3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -85, 0, 55)
+[node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_01"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = SubResource("trunk_mesh")
+[node name="Leaves" type="MeshInstance3D" parent="Landmarks/Tree_01"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
+mesh = SubResource("leaves_mesh")
+
+[node name="Tree_02" type="Node3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -85, 0, -55)
+[node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_02"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = SubResource("trunk_mesh")
+[node name="Leaves" type="MeshInstance3D" parent="Landmarks/Tree_02"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
+mesh = SubResource("leaves_mesh")
+
+[node name="Tree_03" type="Node3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 0, 55)
+[node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_03"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = SubResource("trunk_mesh")
+[node name="Leaves" type="MeshInstance3D" parent="Landmarks/Tree_03"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
+mesh = SubResource("leaves_mesh")
+
+[node name="Tree_04" type="Node3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 0, -55)
+[node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_04"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = SubResource("trunk_mesh")
+[node name="Leaves" type="MeshInstance3D" parent="Landmarks/Tree_04"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
+mesh = SubResource("leaves_mesh")
+
+[node name="Tree_05" type="Node3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 68)
+[node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_05"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = SubResource("trunk_mesh")
+[node name="Leaves" type="MeshInstance3D" parent="Landmarks/Tree_05"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
+mesh = SubResource("leaves_mesh")
+
+[node name="Tree_06" type="Node3D" parent="Landmarks"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -68)
+[node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_06"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+mesh = SubResource("trunk_mesh")
+[node name="Leaves" type="MeshInstance3D" parent="Landmarks/Tree_06"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
+mesh = SubResource("leaves_mesh")
+
+; ────────────────────────────────────────────────────
+; START / FINISH marker
+; ────────────────────────────────────────────────────
+
+[node name="StartFinish" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0, 50)
