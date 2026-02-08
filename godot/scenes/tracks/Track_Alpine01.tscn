@@ -1,31 +1,56 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=30 format=3]
 
 [ext_resource type="Script" path="res://scripts/track/Checkpoint.gd" id="cp_script"]
 
+; ── MATERIALS ────────────────────────────────────────────
 [sub_resource type="StandardMaterial3D" id="mat_snow"]
-albedo_color = Color(0.92, 0.95, 0.98, 1)
+albedo_color = Color(0.95, 0.97, 1.0, 1)
 
 [sub_resource type="StandardMaterial3D" id="mat_road"]
-albedo_color = Color(0.35, 0.38, 0.42, 1)
+albedo_color = Color(0.22, 0.22, 0.28, 1)
 
 [sub_resource type="StandardMaterial3D" id="mat_wall"]
-albedo_color = Color(0.5, 0.55, 0.6, 1)
+albedo_color = Color(0.85, 0.3, 0.15, 1)
+emission_enabled = true
+emission = Color(0.4, 0.1, 0.0, 1)
+emission_energy_multiplier = 0.2
 
 [sub_resource type="StandardMaterial3D" id="mat_tree_trunk"]
-albedo_color = Color(0.4, 0.28, 0.15, 1)
+albedo_color = Color(0.45, 0.3, 0.12, 1)
 
 [sub_resource type="StandardMaterial3D" id="mat_tree_leaves"]
-albedo_color = Color(0.15, 0.45, 0.2, 1)
+albedo_color = Color(0.1, 0.6, 0.2, 1)
 
+[sub_resource type="StandardMaterial3D" id="mat_cp_gate"]
+albedo_color = Color(0.1, 0.6, 1.0, 0.4)
+transparency = 1
+emission_enabled = true
+emission = Color(0.0, 0.3, 0.8, 1)
+emission_energy_multiplier = 0.6
+
+[sub_resource type="StandardMaterial3D" id="mat_cp_post"]
+albedo_color = Color(1.0, 0.85, 0.0, 1)
+emission_enabled = true
+emission = Color(0.5, 0.4, 0.0, 1)
+emission_energy_multiplier = 0.5
+
+[sub_resource type="StandardMaterial3D" id="mat_startline"]
+albedo_color = Color(0.1, 0.9, 0.2, 1)
+emission_enabled = true
+emission = Color(0.0, 0.4, 0.1, 1)
+emission_energy_multiplier = 0.5
+
+; ── SHARED MESHES ────────────────────────────────────────
 [sub_resource type="PlaneMesh" id="ground_mesh"]
 size = Vector2(300, 250)
 material = SubResource("mat_snow")
 
-[sub_resource type="BoxShape3D" id="ground_shape"]
-size = Vector3(300, 0.2, 250)
+[sub_resource type="BoxMesh" id="road_mesh"]
+size = Vector3(1, 0.05, 1)
+material = SubResource("mat_road")
 
 [sub_resource type="BoxMesh" id="wall_mesh"]
-size = Vector3(1, 2, 1)
+size = Vector3(1, 1, 1)
 material = SubResource("mat_wall")
 
 [sub_resource type="CylinderMesh" id="trunk_mesh"]
@@ -39,215 +64,261 @@ radius = 2.0
 height = 3.5
 material = SubResource("mat_tree_leaves")
 
-[sub_resource type="BoxMesh" id="road_mesh"]
-size = Vector3(1, 0.05, 1)
-material = SubResource("mat_road")
+; ── COLLISION SHAPES (properly sized per wall type) ──────
+[sub_resource type="BoxShape3D" id="ground_col"]
+size = Vector3(300, 0.2, 250)
 
+[sub_resource type="BoxShape3D" id="wall_outer_ns"]
+size = Vector3(120, 4, 3)
+
+[sub_resource type="BoxShape3D" id="wall_outer_ew"]
+size = Vector3(3, 4, 90)
+
+[sub_resource type="BoxShape3D" id="wall_outer_corner"]
+size = Vector3(35, 4, 3)
+
+[sub_resource type="BoxShape3D" id="wall_inner_ns"]
+size = Vector3(55, 4, 3)
+
+[sub_resource type="BoxShape3D" id="wall_inner_ew"]
+size = Vector3(3, 4, 35)
+
+[sub_resource type="BoxShape3D" id="wall_inner_corner"]
+size = Vector3(22, 4, 3)
+
+; ── CHECKPOINT SHAPES + VISUALS ──────────────────────────
 [sub_resource type="BoxShape3D" id="cp_shape_ns"]
-size = Vector3(2, 5, 16)
+size = Vector3(4, 6, 30)
 
 [sub_resource type="BoxShape3D" id="cp_shape_ew"]
-size = Vector3(16, 5, 2)
+size = Vector3(30, 6, 4)
 
-[sub_resource type="StandardMaterial3D" id="mat_checkpoint"]
-albedo_color = Color(0.2, 0.7, 1.0, 0.25)
-transparency = 1
+[sub_resource type="BoxMesh" id="cp_gate_ns"]
+size = Vector3(0.3, 5, 26)
+material = SubResource("mat_cp_gate")
+
+[sub_resource type="BoxMesh" id="cp_gate_ew"]
+size = Vector3(26, 5, 0.3)
+material = SubResource("mat_cp_gate")
+
+[sub_resource type="CylinderMesh" id="cp_post_mesh"]
+top_radius = 0.3
+bottom_radius = 0.3
+height = 6.0
+material = SubResource("mat_cp_post")
+
+[sub_resource type="BoxMesh" id="startline_mesh"]
+size = Vector3(0.5, 6, 26)
+material = SubResource("mat_startline")
+
+; ═════════════════════════════════════════════════════════
+; SCENE TREE
+; ═════════════════════════════════════════════════════════
 
 [node name="Track_Alpine01" type="Node3D"]
 
+; ── GROUND ───────────────────────────────────────────────
 [node name="Ground" type="StaticBody3D" parent="."]
-[node name="GroundMesh" type="MeshInstance3D" parent="Ground"]
+[node name="Mesh" type="MeshInstance3D" parent="Ground"]
 mesh = SubResource("ground_mesh")
-[node name="GroundCollision" type="CollisionShape3D" parent="Ground"]
+[node name="Col" type="CollisionShape3D" parent="Ground"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, 0)
-shape = SubResource("ground_shape")
+shape = SubResource("ground_col")
 
-; ────────────────────────────────────────────────────
-; ROAD SURFACE — Oval loop: 2 straights + 4 curved corners
-; Track flows: Start → South straight → SW corner → West straight-ish
-;   → NW corner → North straight → NE corner → East straight → SE corner → back to Start
-; ────────────────────────────────────────────────────
-
+; ─────────────────────────────────────────────────────────
+; ROAD — wide oval loop
+; Outer edge: ±75 X, ±60 Z    Inner edge: ±40 X, ±30 Z
+; Road center: S=Z45, N=Z-45, W=X-57, E=X57
+; Road width: ~30 on straights, ~25+ at corners
+; ─────────────────────────────────────────────────────────
 [node name="Road" type="Node3D" parent="."]
 
-; Bottom straight (south side, along X axis)
-[node name="Straight_South" type="MeshInstance3D" parent="Road"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 50)
+[node name="Straight_S" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 45)
 mesh = SubResource("road_mesh")
-scale = Vector3(120, 1, 14)
+scale = Vector3(110, 1, 34)
 
-; Top straight (north side)
-[node name="Straight_North" type="MeshInstance3D" parent="Road"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, -50)
+[node name="Straight_N" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, -45)
 mesh = SubResource("road_mesh")
-scale = Vector3(120, 1, 14)
+scale = Vector3(110, 1, 34)
 
-; Left straight (west side, along Z axis)
-[node name="Straight_West" type="MeshInstance3D" parent="Road"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -65, 0.03, 0)
+[node name="Straight_W" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57, 0.03, 0)
 mesh = SubResource("road_mesh")
-scale = Vector3(14, 1, 120)
+scale = Vector3(34, 1, 95)
 
-; Right straight (east side)
-[node name="Straight_East" type="MeshInstance3D" parent="Road"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 65, 0.03, 0)
+[node name="Straight_E" type="MeshInstance3D" parent="Road"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57, 0.03, 0)
 mesh = SubResource("road_mesh")
-scale = Vector3(14, 1, 120)
+scale = Vector3(34, 1, 95)
 
-; Corner road fills (45-degree patches at each corner)
 [node name="Corner_SW" type="MeshInstance3D" parent="Road"]
-transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, -50, 0.03, 40)
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, -48, 0.03, 38)
 mesh = SubResource("road_mesh")
-scale = Vector3(30, 1, 14)
+scale = Vector3(40, 1, 36)
 
 [node name="Corner_NW" type="MeshInstance3D" parent="Road"]
-transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, -50, 0.03, -40)
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, -48, 0.03, -38)
 mesh = SubResource("road_mesh")
-scale = Vector3(30, 1, 14)
+scale = Vector3(40, 1, 36)
 
 [node name="Corner_NE" type="MeshInstance3D" parent="Road"]
-transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, 50, 0.03, -40)
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, 48, 0.03, -38)
 mesh = SubResource("road_mesh")
-scale = Vector3(30, 1, 14)
+scale = Vector3(40, 1, 36)
 
 [node name="Corner_SE" type="MeshInstance3D" parent="Road"]
-transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, 50, 0.03, 40)
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, 48, 0.03, 38)
 mesh = SubResource("road_mesh")
-scale = Vector3(30, 1, 14)
+scale = Vector3(40, 1, 36)
 
-; ────────────────────────────────────────────────────
-; WALLS — Outer boundary + Inner boundary
-; ────────────────────────────────────────────────────
-
+; ─────────────────────────────────────────────────────────
+; OUTER WALLS — large boundary
+; ─────────────────────────────────────────────────────────
 [node name="Walls" type="Node3D" parent="."]
 
-; === OUTER WALLS ===
-; South outer
-[node name="OuterWall_S" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 60)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_S"]
+[node name="Out_S" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 62)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/Out_S"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(140, 1, 2)
-[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_S"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.467, 10, 0.008)
+scale = Vector3(120, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/Out_S"]
+shape = SubResource("wall_outer_ns")
 
-; North outer
-[node name="OuterWall_N" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -60)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_N"]
+[node name="Out_N" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -62)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/Out_N"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(140, 1, 2)
-[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_N"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.467, 10, 0.008)
+scale = Vector3(120, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/Out_N"]
+shape = SubResource("wall_outer_ns")
 
-; West outer
-[node name="OuterWall_W" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -77, 1, 0)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_W"]
+[node name="Out_W" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -76, 2, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/Out_W"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(2, 1, 130)
-[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_W"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.007, 10, 0.52)
+scale = Vector3(3, 4, 90)
+[node name="Col" type="CollisionShape3D" parent="Walls/Out_W"]
+shape = SubResource("wall_outer_ew")
 
-; East outer
-[node name="OuterWall_E" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 77, 1, 0)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_E"]
+[node name="Out_E" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 76, 2, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/Out_E"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(2, 1, 130)
-[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_E"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.007, 10, 0.52)
+scale = Vector3(3, 4, 90)
+[node name="Col" type="CollisionShape3D" parent="Walls/Out_E"]
+shape = SubResource("wall_outer_ew")
 
-; === INNER WALLS (oval center island) ===
-; South inner
-[node name="InnerWall_S" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 40)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/InnerWall_S"]
+[node name="Out_SW" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, -63, 2, 52)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/Out_SW"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(95, 1, 2)
-[node name="Col" type="CollisionShape3D" parent="Walls/InnerWall_S"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.317, 10, 0.008)
+scale = Vector3(35, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/Out_SW"]
+shape = SubResource("wall_outer_corner")
 
-; North inner
-[node name="InnerWall_N" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, -40)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/InnerWall_N"]
+[node name="Out_NW" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, -63, 2, -52)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/Out_NW"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(95, 1, 2)
-[node name="Col" type="CollisionShape3D" parent="Walls/InnerWall_N"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.317, 10, 0.008)
+scale = Vector3(35, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/Out_NW"]
+shape = SubResource("wall_outer_corner")
 
-; West inner
-[node name="InnerWall_W" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -52, 1, 0)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/InnerWall_W"]
+[node name="Out_NE" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, 63, 2, -52)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/Out_NE"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(2, 1, 88)
-[node name="Col" type="CollisionShape3D" parent="Walls/InnerWall_W"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.007, 10, 0.352)
+scale = Vector3(35, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/Out_NE"]
+shape = SubResource("wall_outer_corner")
 
-; East inner
-[node name="InnerWall_E" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 52, 1, 0)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/InnerWall_E"]
+[node name="Out_SE" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, 63, 2, 52)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/Out_SE"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(2, 1, 88)
-[node name="Col" type="CollisionShape3D" parent="Walls/InnerWall_E"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.007, 10, 0.352)
+scale = Vector3(35, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/Out_SE"]
+shape = SubResource("wall_outer_corner")
 
-; === OUTER CORNER WALLS (diagonal) ===
-[node name="OuterWall_SW" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, -62, 1, 50)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_SW"]
+; ─────────────────────────────────────────────────────────
+; INNER WALLS — compact center island
+; Inner S/N at Z=±30 spanning 55 wide, Inner W/E at X=±40 spanning 35 tall
+; Leaves ~30 unit road on straights, ~25+ at corners
+; ─────────────────────────────────────────────────────────
+
+[node name="In_S" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 30)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/In_S"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(30, 1, 2)
-[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_SW"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.1, 10, 0.008)
+scale = Vector3(55, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/In_S"]
+shape = SubResource("wall_inner_ns")
 
-[node name="OuterWall_NW" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, -62, 1, -50)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_NW"]
+[node name="In_N" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -30)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/In_N"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(30, 1, 2)
-[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_NW"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.1, 10, 0.008)
+scale = Vector3(55, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/In_N"]
+shape = SubResource("wall_inner_ns")
 
-[node name="OuterWall_NE" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, 62, 1, -50)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_NE"]
+[node name="In_W" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -40, 2, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/In_W"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(30, 1, 2)
-[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_NE"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.1, 10, 0.008)
+scale = Vector3(3, 4, 35)
+[node name="Col" type="CollisionShape3D" parent="Walls/In_W"]
+shape = SubResource("wall_inner_ew")
 
-[node name="OuterWall_SE" type="StaticBody3D" parent="Walls"]
-transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, 62, 1, 50)
-[node name="Mesh" type="MeshInstance3D" parent="Walls/OuterWall_SE"]
+[node name="In_E" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 40, 2, 0)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/In_E"]
 mesh = SubResource("wall_mesh")
-scale = Vector3(30, 1, 2)
-[node name="Col" type="CollisionShape3D" parent="Walls/OuterWall_SE"]
-shape = SubResource("ground_shape")
-scale = Vector3(0.1, 10, 0.008)
+scale = Vector3(3, 4, 35)
+[node name="Col" type="CollisionShape3D" parent="Walls/In_E"]
+shape = SubResource("wall_inner_ew")
 
-; ────────────────────────────────────────────────────
-; LANDMARKS — Trees around the outside for navigation
-; ────────────────────────────────────────────────────
+[node name="In_SW" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, -33, 2, 23)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/In_SW"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(22, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/In_SW"]
+shape = SubResource("wall_inner_corner")
 
+[node name="In_NW" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, -33, 2, -23)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/In_NW"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(22, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/In_NW"]
+shape = SubResource("wall_inner_corner")
+
+[node name="In_NE" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, 0.707, 0, 1, 0, -0.707, 0, 0.707, 33, 2, -23)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/In_NE"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(22, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/In_NE"]
+shape = SubResource("wall_inner_corner")
+
+[node name="In_SE" type="StaticBody3D" parent="Walls"]
+transform = Transform3D(0.707, 0, -0.707, 0, 1, 0, 0.707, 0, 0.707, 33, 2, 23)
+[node name="Mesh" type="MeshInstance3D" parent="Walls/In_SE"]
+mesh = SubResource("wall_mesh")
+scale = Vector3(22, 4, 3)
+[node name="Col" type="CollisionShape3D" parent="Walls/In_SE"]
+shape = SubResource("wall_inner_corner")
+
+; ─────────────────────────────────────────────────────────
+; LANDMARKS — trees outside the track
+; ─────────────────────────────────────────────────────────
 [node name="Landmarks" type="Node3D" parent="."]
 
 [node name="Tree_01" type="Node3D" parent="Landmarks"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -85, 0, 55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -85, 0, 60)
 [node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_01"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 mesh = SubResource("trunk_mesh")
@@ -256,7 +327,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
 mesh = SubResource("leaves_mesh")
 
 [node name="Tree_02" type="Node3D" parent="Landmarks"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -85, 0, -55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -85, 0, -60)
 [node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_02"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 mesh = SubResource("trunk_mesh")
@@ -265,7 +336,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
 mesh = SubResource("leaves_mesh")
 
 [node name="Tree_03" type="Node3D" parent="Landmarks"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 0, 55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 0, 60)
 [node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_03"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 mesh = SubResource("trunk_mesh")
@@ -274,7 +345,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
 mesh = SubResource("leaves_mesh")
 
 [node name="Tree_04" type="Node3D" parent="Landmarks"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 0, -55)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 85, 0, -60)
 [node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_04"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 mesh = SubResource("trunk_mesh")
@@ -283,7 +354,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
 mesh = SubResource("leaves_mesh")
 
 [node name="Tree_05" type="Node3D" parent="Landmarks"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 68)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 72)
 [node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_05"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 mesh = SubResource("trunk_mesh")
@@ -292,7 +363,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
 mesh = SubResource("leaves_mesh")
 
 [node name="Tree_06" type="Node3D" parent="Landmarks"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -68)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -72)
 [node name="Trunk" type="MeshInstance3D" parent="Landmarks/Tree_06"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 mesh = SubResource("trunk_mesh")
@@ -300,82 +371,146 @@ mesh = SubResource("trunk_mesh")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5.5, 0)
 mesh = SubResource("leaves_mesh")
 
-; ────────────────────────────────────────────────────
-; START / FINISH marker
-; ────────────────────────────────────────────────────
-
+; ─────────────────────────────────────────────────────────
+; START / FINISH — green arch on south straight
+; ─────────────────────────────────────────────────────────
 [node name="StartFinish" type="Node3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0, 50)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 0, 45)
 
-; ────────────────────────────────────────────────────
-; CHECKPOINTS — 8 triggers placed counter-clockwise around the oval
-; Sled starts at (30,0.5,50) facing west (-X)
-; Order: South straight → SW corner → West straight → NW corner →
-;        North straight → NE corner → East straight → SE corner → back
-; ────────────────────────────────────────────────────
+[node name="Arch" type="MeshInstance3D" parent="StartFinish"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 0)
+mesh = SubResource("startline_mesh")
 
+[node name="PostL" type="MeshInstance3D" parent="StartFinish"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, -13)
+mesh = SubResource("cp_post_mesh")
+
+[node name="PostR" type="MeshInstance3D" parent="StartFinish"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 13)
+mesh = SubResource("cp_post_mesh")
+
+; ─────────────────────────────────────────────────────────
+; CHECKPOINTS — 8 gates counter-clockwise
+; Road centers: S=Z45, W=X-57, N=Z-45, E=X57
+; ─────────────────────────────────────────────────────────
 [node name="Checkpoints" type="Node3D" parent="."]
 
-; CP0 — South straight, east half (start/finish line)
 [node name="CP0" type="Area3D" parent="Checkpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.5, 50)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 3, 45)
 script = ExtResource("cp_script")
 checkpoint_index = 0
 [node name="Col" type="CollisionShape3D" parent="Checkpoints/CP0"]
 shape = SubResource("cp_shape_ns")
+[node name="Gate" type="MeshInstance3D" parent="Checkpoints/CP0"]
+mesh = SubResource("cp_gate_ns")
+[node name="PostL" type="MeshInstance3D" parent="Checkpoints/CP0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -13)
+mesh = SubResource("cp_post_mesh")
+[node name="PostR" type="MeshInstance3D" parent="Checkpoints/CP0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13)
+mesh = SubResource("cp_post_mesh")
 
-; CP1 — South straight, west half
 [node name="CP1" type="Area3D" parent="Checkpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 2.5, 50)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 3, 45)
 script = ExtResource("cp_script")
 checkpoint_index = 1
 [node name="Col" type="CollisionShape3D" parent="Checkpoints/CP1"]
 shape = SubResource("cp_shape_ns")
+[node name="Gate" type="MeshInstance3D" parent="Checkpoints/CP1"]
+mesh = SubResource("cp_gate_ns")
+[node name="PostL" type="MeshInstance3D" parent="Checkpoints/CP1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -13)
+mesh = SubResource("cp_post_mesh")
+[node name="PostR" type="MeshInstance3D" parent="Checkpoints/CP1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13)
+mesh = SubResource("cp_post_mesh")
 
-; CP2 — West straight, south portion (after SW corner)
 [node name="CP2" type="Area3D" parent="Checkpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58, 2.5, 20)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57, 3, 10)
 script = ExtResource("cp_script")
 checkpoint_index = 2
 [node name="Col" type="CollisionShape3D" parent="Checkpoints/CP2"]
 shape = SubResource("cp_shape_ew")
+[node name="Gate" type="MeshInstance3D" parent="Checkpoints/CP2"]
+mesh = SubResource("cp_gate_ew")
+[node name="PostL" type="MeshInstance3D" parent="Checkpoints/CP2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 0)
+mesh = SubResource("cp_post_mesh")
+[node name="PostR" type="MeshInstance3D" parent="Checkpoints/CP2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+mesh = SubResource("cp_post_mesh")
 
-; CP3 — West straight, north portion
 [node name="CP3" type="Area3D" parent="Checkpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58, 2.5, -20)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -57, 3, -10)
 script = ExtResource("cp_script")
 checkpoint_index = 3
 [node name="Col" type="CollisionShape3D" parent="Checkpoints/CP3"]
 shape = SubResource("cp_shape_ew")
+[node name="Gate" type="MeshInstance3D" parent="Checkpoints/CP3"]
+mesh = SubResource("cp_gate_ew")
+[node name="PostL" type="MeshInstance3D" parent="Checkpoints/CP3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 0)
+mesh = SubResource("cp_post_mesh")
+[node name="PostR" type="MeshInstance3D" parent="Checkpoints/CP3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+mesh = SubResource("cp_post_mesh")
 
-; CP4 — North straight, west portion (after NW corner)
 [node name="CP4" type="Area3D" parent="Checkpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 2.5, -50)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 3, -45)
 script = ExtResource("cp_script")
 checkpoint_index = 4
 [node name="Col" type="CollisionShape3D" parent="Checkpoints/CP4"]
 shape = SubResource("cp_shape_ns")
+[node name="Gate" type="MeshInstance3D" parent="Checkpoints/CP4"]
+mesh = SubResource("cp_gate_ns")
+[node name="PostL" type="MeshInstance3D" parent="Checkpoints/CP4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -13)
+mesh = SubResource("cp_post_mesh")
+[node name="PostR" type="MeshInstance3D" parent="Checkpoints/CP4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13)
+mesh = SubResource("cp_post_mesh")
 
-; CP5 — North straight, east portion
 [node name="CP5" type="Area3D" parent="Checkpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.5, -50)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 3, -45)
 script = ExtResource("cp_script")
 checkpoint_index = 5
 [node name="Col" type="CollisionShape3D" parent="Checkpoints/CP5"]
 shape = SubResource("cp_shape_ns")
+[node name="Gate" type="MeshInstance3D" parent="Checkpoints/CP5"]
+mesh = SubResource("cp_gate_ns")
+[node name="PostL" type="MeshInstance3D" parent="Checkpoints/CP5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -13)
+mesh = SubResource("cp_post_mesh")
+[node name="PostR" type="MeshInstance3D" parent="Checkpoints/CP5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 13)
+mesh = SubResource("cp_post_mesh")
 
-; CP6 — East straight, north portion (after NE corner)
 [node name="CP6" type="Area3D" parent="Checkpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 2.5, -20)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57, 3, -10)
 script = ExtResource("cp_script")
 checkpoint_index = 6
 [node name="Col" type="CollisionShape3D" parent="Checkpoints/CP6"]
 shape = SubResource("cp_shape_ew")
+[node name="Gate" type="MeshInstance3D" parent="Checkpoints/CP6"]
+mesh = SubResource("cp_gate_ew")
+[node name="PostL" type="MeshInstance3D" parent="Checkpoints/CP6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 0)
+mesh = SubResource("cp_post_mesh")
+[node name="PostR" type="MeshInstance3D" parent="Checkpoints/CP6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+mesh = SubResource("cp_post_mesh")
 
-; CP7 — East straight, south portion
 [node name="CP7" type="Area3D" parent="Checkpoints"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 2.5, 20)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 57, 3, 10)
 script = ExtResource("cp_script")
 checkpoint_index = 7
 [node name="Col" type="CollisionShape3D" parent="Checkpoints/CP7"]
 shape = SubResource("cp_shape_ew")
+[node name="Gate" type="MeshInstance3D" parent="Checkpoints/CP7"]
+mesh = SubResource("cp_gate_ew")
+[node name="PostL" type="MeshInstance3D" parent="Checkpoints/CP7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, 0, 0)
+mesh = SubResource("cp_post_mesh")
+[node name="PostR" type="MeshInstance3D" parent="Checkpoints/CP7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13, 0, 0)
+mesh = SubResource("cp_post_mesh")

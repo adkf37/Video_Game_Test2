@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/ui/Minimap.gd" id="2"]
 
 [node name="HUD" type="CanvasLayer"]
 script = ExtResource("1")
@@ -9,26 +10,43 @@ script = ExtResource("1")
 anchors_preset = 0
 offset_left = 10.0
 offset_top = 10.0
-offset_right = 300.0
-offset_bottom = 150.0
+offset_right = 320.0
+offset_bottom = 200.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 
 [node name="TimerLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 32
+theme_override_colors/font_color = Color(1, 1, 0.3, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 36
 text = "00:00.00"
 
 [node name="LapLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 26
 text = "Lap 1 / 3"
 
 [node name="SpeedLabel" type="Label" parent="MarginContainer/VBoxContainer"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 24
+theme_override_colors/font_color = Color(0.5, 1, 0.5, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 26
 text = "0 km/h"
+
+[node name="CheckpointLabel" type="Label" parent="MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 3
+theme_override_font_sizes/font_size = 22
+text = "CP 1 / 8"
 
 [node name="FinishPanel" type="PanelContainer" parent="."]
 anchors_preset = 8
@@ -61,3 +79,17 @@ custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 custom_minimum_size = Vector2(180, 45)
 text = "Restart"
+
+[node name="Minimap" type="Control" parent="."]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -210.0
+offset_top = -210.0
+offset_right = -10.0
+offset_bottom = -10.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("2")

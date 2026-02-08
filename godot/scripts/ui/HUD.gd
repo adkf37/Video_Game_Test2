@@ -4,6 +4,7 @@ extends CanvasLayer
 @onready var timer_label: Label = $MarginContainer/VBoxContainer/TimerLabel
 @onready var lap_label: Label = $MarginContainer/VBoxContainer/LapLabel
 @onready var speed_label: Label = $MarginContainer/VBoxContainer/SpeedLabel
+@onready var checkpoint_label: Label = $MarginContainer/VBoxContainer/CheckpointLabel
 @onready var finish_panel: PanelContainer = $FinishPanel
 @onready var finish_time_label: Label = $FinishPanel/VBoxContainer/FinishTimeLabel
 @onready var restart_button: Button = $FinishPanel/VBoxContainer/RestartButton
@@ -39,6 +40,13 @@ func _process(_delta: float) -> void:
 		speed_label.text = "%d km/h" % int(player_sled.get_speed_kph())
 	else:
 		speed_label.text = "0 km/h"
+
+	# Checkpoint progress
+	var tracker = race_manager.lap_tracker
+	if tracker:
+		var next_cp = tracker.next_checkpoint + 1
+		var total_cp = tracker.total_checkpoints
+		checkpoint_label.text = "CP %d / %d" % [mini(next_cp, total_cp), total_cp]
 
 func _on_race_finished(final_time: float) -> void:
 	finish_panel.visible = true
