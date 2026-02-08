@@ -1,0 +1,44 @@
+[gd_scene load_steps=7 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/vehicles/Sled.tscn" id="1"]
+
+[sub_resource type="Sky" id="sky"]
+
+[sub_resource type="Environment" id="environment"]
+background_mode = 2
+sky = SubResource("sky")
+ambient_light_source = 1
+ambient_light_color = Color(0.8, 0.85, 0.9, 1)
+ambient_light_energy = 0.5
+
+[sub_resource type="StandardMaterial3D" id="sub_ground_mat"]
+albedo_color = Color(0.9, 0.93, 0.97, 1)
+
+[sub_resource type="PlaneMesh" id="sub_plane"]
+size = Vector2(200, 200)
+material = SubResource("sub_ground_mat")
+
+[sub_resource type="BoxShape3D" id="sub_ground_collision"]
+size = Vector3(200, 0.1, 200)
+
+[node name="Main" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("environment")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 0, 10, 0)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="Ground" type="StaticBody3D" parent="."]
+
+[node name="GroundMesh" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("sub_plane")
+
+[node name="GroundCollision" type="CollisionShape3D" parent="Ground"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.05, 0)
+shape = SubResource("sub_ground_collision")
+
+[node name="PlayerSled" parent="." instance=ExtResource("1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
