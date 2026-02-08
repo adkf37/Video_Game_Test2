@@ -1,4 +1,6 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=16 format=3]
+
+[ext_resource type="Script" path="res://scripts/track/Checkpoint.gd" id="cp_script"]
 
 [sub_resource type="StandardMaterial3D" id="mat_snow"]
 albedo_color = Color(0.92, 0.95, 0.98, 1)
@@ -40,6 +42,16 @@ material = SubResource("mat_tree_leaves")
 [sub_resource type="BoxMesh" id="road_mesh"]
 size = Vector3(1, 0.05, 1)
 material = SubResource("mat_road")
+
+[sub_resource type="BoxShape3D" id="cp_shape_ns"]
+size = Vector3(2, 5, 16)
+
+[sub_resource type="BoxShape3D" id="cp_shape_ew"]
+size = Vector3(16, 5, 2)
+
+[sub_resource type="StandardMaterial3D" id="mat_checkpoint"]
+albedo_color = Color(0.2, 0.7, 1.0, 0.25)
+transparency = 1
 
 [node name="Track_Alpine01" type="Node3D"]
 
@@ -294,3 +306,76 @@ mesh = SubResource("leaves_mesh")
 
 [node name="StartFinish" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30, 0, 50)
+
+; ────────────────────────────────────────────────────
+; CHECKPOINTS — 8 triggers placed counter-clockwise around the oval
+; Sled starts at (30,0.5,50) facing west (-X)
+; Order: South straight → SW corner → West straight → NW corner →
+;        North straight → NE corner → East straight → SE corner → back
+; ────────────────────────────────────────────────────
+
+[node name="Checkpoints" type="Node3D" parent="."]
+
+; CP0 — South straight, east half (start/finish line)
+[node name="CP0" type="Area3D" parent="Checkpoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.5, 50)
+script = ExtResource("cp_script")
+checkpoint_index = 0
+[node name="Col" type="CollisionShape3D" parent="Checkpoints/CP0"]
+shape = SubResource("cp_shape_ns")
+
+; CP1 — South straight, west half
+[node name="CP1" type="Area3D" parent="Checkpoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -30, 2.5, 50)
+script = ExtResource("cp_script")
+checkpoint_index = 1
+[node name="Col" type="CollisionShape3D" parent="Checkpoints/CP1"]
+shape = SubResource("cp_shape_ns")
+
+; CP2 — West straight, south portion (after SW corner)
+[node name="CP2" type="Area3D" parent="Checkpoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58, 2.5, 20)
+script = ExtResource("cp_script")
+checkpoint_index = 2
+[node name="Col" type="CollisionShape3D" parent="Checkpoints/CP2"]
+shape = SubResource("cp_shape_ew")
+
+; CP3 — West straight, north portion
+[node name="CP3" type="Area3D" parent="Checkpoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -58, 2.5, -20)
+script = ExtResource("cp_script")
+checkpoint_index = 3
+[node name="Col" type="CollisionShape3D" parent="Checkpoints/CP3"]
+shape = SubResource("cp_shape_ew")
+
+; CP4 — North straight, west portion (after NW corner)
+[node name="CP4" type="Area3D" parent="Checkpoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20, 2.5, -50)
+script = ExtResource("cp_script")
+checkpoint_index = 4
+[node name="Col" type="CollisionShape3D" parent="Checkpoints/CP4"]
+shape = SubResource("cp_shape_ns")
+
+; CP5 — North straight, east portion
+[node name="CP5" type="Area3D" parent="Checkpoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 20, 2.5, -50)
+script = ExtResource("cp_script")
+checkpoint_index = 5
+[node name="Col" type="CollisionShape3D" parent="Checkpoints/CP5"]
+shape = SubResource("cp_shape_ns")
+
+; CP6 — East straight, north portion (after NE corner)
+[node name="CP6" type="Area3D" parent="Checkpoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 2.5, -20)
+script = ExtResource("cp_script")
+checkpoint_index = 6
+[node name="Col" type="CollisionShape3D" parent="Checkpoints/CP6"]
+shape = SubResource("cp_shape_ew")
+
+; CP7 — East straight, south portion
+[node name="CP7" type="Area3D" parent="Checkpoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 58, 2.5, 20)
+script = ExtResource("cp_script")
+checkpoint_index = 7
+[node name="Col" type="CollisionShape3D" parent="Checkpoints/CP7"]
+shape = SubResource("cp_shape_ew")
