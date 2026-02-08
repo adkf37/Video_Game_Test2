@@ -3,10 +3,12 @@
 [ext_resource type="Script" path="res://scripts/vehicle/SledController.gd" id="1"]
 
 [sub_resource type="StandardMaterial3D" id="sub_sled_mat"]
-albedo_color = Color(0.55, 0.35, 0.2, 1)
+albedo_color = Color(0.8, 0.4, 0.15, 1)
+metallic = 0.2
+roughness = 0.7
 
 [sub_resource type="BoxMesh" id="sub_box"]
-size = Vector3(1, 0.5, 2)
+size = Vector3(1.5, 0.6, 2.5)
 material = SubResource("sub_sled_mat")
 
 [sub_resource type="BoxShape3D" id="sub_shape"]
@@ -22,6 +24,6 @@ mesh = SubResource("sub_box")
 shape = SubResource("sub_shape")
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.921, -0.391, 0, 0.391, 0.921, 0, 3, 7)
+transform = Transform3D(1, 0, 0, 0, 0.866, -0.5, 0, 0.5, 0.866, 0, 6, 12)
 current = true
-fov = 70.0
+fov = 75.0
