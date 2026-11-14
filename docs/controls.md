@@ -1,21 +1,25 @@
 # Controls
 
-| Action | Keyboard |
-|---|---|
-| Accelerate | W / Up |
-| Brake, then reverse | S / Down |
-| Turn | A / D or Left / Right |
-| Drift | Hold Shift while steering |
-| Boost | Hold Space while accelerating |
-| Recover | R, with a 3-second time penalty |
-| Pause or resume | Esc |
-| Mute | M |
-| Menu navigation | Mouse, or arrows / Enter |
+| Action | Keyboard | Gamepad |
+|---|---|---|
+| Accelerate | W / Up | RT |
+| Brake / reverse | S / Down | LT |
+| Turn | A / D or Left / Right | Left stick |
+| Drift | Hold Shift while steering | LB |
+| Boost | Space while accelerating | A |
+| Whip rival sled | E | X |
+| Recover | R | Y |
+| Pause / resume | Esc | Start |
+| Mute | M | Keyboard only |
 
-Boost only works on the trail. Releasing Space recharges it; after running empty, release and press again. Drift preserves more sideways momentum, so enter a corner early and release to regain grip.
+Select track, difficulty, dog breed and sled in basecamp with the mouse or keyboard.
 
-The first finish-line crossing starts checkpoint validation. Complete the route in order, then cross the line again to complete a lap. Reversing over a checkpoint does not count. The gold minimap marker shows the next required checkpoint.
+Boost only works on the trail. Release Space to recharge; after running empty, release and press again. Drift preserves sideways momentum, so enter corners early and release to regain grip.
 
-Recovery places the team just after the last accepted checkpoint (or behind the starting line before the first crossing), clears velocity and adds three seconds to the current lap and total time.
+Whips hit a nearby active sled beside you within 6 m, pushing it outward. The cooldown is 3.5 seconds; a hit grants 0.8 seconds of protection. The HUD shows readiness. Sled contact also causes a physical bounce.
 
-Gamepad mappings are provided for left-stick steering, right-trigger throttle, left-trigger brake, A boost, LB drift, Y recover and Start pause. Physical hardware validation remains outstanding.
+The first forward finish-line crossing starts lap tracking. Complete the route and cross forward again to earn a lap. Missed markers never require turning back. Off-track speed is capped at 6 / 4.5 / 3.5 m/s on Easy / Medium / Hard, with boost disabled.
+
+Recovery places you at the nearest trail point, clears momentum and adds three seconds to your personal lap and race time. It does not award skipped progress.
+
+Physical gamepad validation remains outstanding.

@@ -21,8 +21,6 @@ func _draw() -> void:
 	line.append(line[0])
 	draw_polyline(line, Color("#557b87"), 9, true)
 	draw_polyline(line, Color("#cee4e9"), 3, true)
-	var expected := float(manager.lap_tracker.next_checkpoint) / track.CHECKPOINT_COUNT
-	draw_circle(_map(track.frame_at(expected).origin), 4, Color("#f1ce7b"))
 	draw_circle(_map(track.points[0]), 4, Color("#f8f1df"))
 	for rival in manager.rivals:
 		draw_circle(_map(rival.global_position), 4.5, rival.team_color)

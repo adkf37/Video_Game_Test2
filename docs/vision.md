@@ -1,18 +1,7 @@
 # Dogsled Kart
 
-A cheerful, lightweight winter racer: a team of dogs, a satisfying sliding sled, and a trail worth learning.
+A cheerful, lightweight racer with expressive dog teams, sliding sleds and playful contact.
 
-## Current milestone
+The current game has three themed courses, three difficulty levels, four breeds with different team sizes, four sled styles and three autonomous rivals. Three-lap races include physical bumps, sideways whip attacks, boost, drift, recovery, records and a customizable garage.
 
-A four-team Alpine Valley race: basecamp, countdown, three laps, lap splits, personal best and retry. It includes animated procedural dogs, a snowy environment, drift, boost, sound and recovery.
-
-## Priorities
-
-1. Handling that feels responsive and readable.
-2. Dogs with visible personality.
-3. A clear racing line through a memorable winter landscape.
-4. Fast iteration in a self-contained Godot project.
-
-## Next
-
-Human handling feedback, more distinct track sections, difficulty options and richer animation. Three NPC teams now race the same course; additional courses remain future work.
+Priorities for the next playtest are readable impacts, fair off-track penalties, distinct breed silhouettes and competitive NPC pacing. More detailed art, animation, audio, items and split-screen remain possible future work.

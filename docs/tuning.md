@@ -1,35 +1,34 @@
 # Sled tuning
 
-All movement constants live in `godot/scripts/vehicle/SledTuning.gd`.
+Movement and contact constants live in `godot/scripts/vehicle/SledTuning.gd`. Garage and difficulty values live in `scripts/core/RaceCatalog.gd`.
 
-| Setting | Value | Purpose |
-|---|---:|---|
-| ACCELERATION | 12 m/s? | Responsive launch without instant top speed |
-| MAX_SPEED | 25 m/s | 90 km/h normal cap |
-| REVERSE_SPEED | 6 m/s | Controlled recovery in reverse |
-| BRAKE_FORCE | 24 m/s? | Braking response |
-| DRAG | 3 m/s? | Coasting |
-| TURN_RATE | 1.25 rad/s | Full steering response |
-| STEER_RESPONSE | 6 /s | Keyboard steering smoothing |
-| GRIP | 7 /s | Normal momentum alignment |
-| DRIFT_GRIP | 1.8 /s | Sideways momentum while drifting |
-| DRIFT_TURN | 1.3 | Turn multiplier during drift |
-| OFFROAD_SPEED | 13 m/s | Deep-snow speed limit |
-| BOOST_SPEED | 36 m/s | 129.6 km/h boost cap |
-| BOOST_ACCEL | 22 m/s? | Boost acceleration |
-| BOOST_DRAIN | 38 /s | Approximately 2.6 seconds from full |
-| BOOST_RECHARGE | 13 /s | Recharge while not boosting |
-| GRAVITY | 22 m/s? | Hill contact and landings |
-| RECOVERY_PENALTY | 3 s | Added to current lap and race |
-| CAMERA_DISTANCE | 10.5 m | Chase distance |
-| CAMERA_HEIGHT | 5.5 m | Chase height |
+| Setting | Value |
+|---|---:|
+| Acceleration | 12 m/s squared |
+| Normal / boost speed | 25 / 36 m/s |
+| Reverse speed | 6 m/s |
+| Brake force / coasting drag | 24 / 3 m/s squared |
+| Turn rate | 1.25 rad/s |
+| Normal / drift grip | 7 / 1.8 per second |
+| Drift turn multiplier | 1.3 |
+| Off-track deceleration | 32 m/s squared |
+| Boost drain / recharge | 38 / 13 per second |
+| Recovery penalty | 3 seconds |
+| Bounce restitution | 0.6 |
+| Pair collision cooldown | 0.3 seconds |
+| Maximum bump impulse | 45 m/s |
+| Impact decay | 20 m/s squared |
+| Whip range / knockback | 6 m / 11 m/s |
+| Whip cooldown / hit immunity | 3.5 / 0.8 seconds |
 
-Speed display uses measured physical velocity, not requested speed. Steering reverses naturally when backing up. Drift changes grip rather than simply raising speed. Camera interpolation uses exponential smoothing.
+Drive momentum and impact momentum are separate so steering cannot immediately erase a hit. Both sleds receive opposite impulses; separating contacts are ignored. Finished and inactive sleds do not block the pack. Breeds and sled styles are cosmetic.
 
-When changing handling, run both the smoke suite and the three-lap driving test, then play manually. The bot validates traversability; it does not establish whether controls feel fun.
+| Difficulty | Trail half-width | Off-track cap | Base NPC throttle | Attack interval |
+|---|---:|---:|---:|---:|
+| Easy | 10 m | 6 m/s | 0.76 | 11 s |
+| Medium | 8 m | 4.5 m/s | 0.86 | 7 s |
+| Hard | 6.8 m | 3.5 m/s | 0.95 | 4.5 s |
 
-## NPC teams
+Rivals use speed-adjusted lookahead, corner braking, scored passing lanes, blocked-lane braking and straightaway boosts. Their throttle differs slightly within the pack. Recovery is reserved for prolonged stalls or departures and uses the nearest trail.
 
-Rivals inherit `SledController.gd`; they supply throttle, steering and boost inputs instead of reading the keyboard. `RivalController.gd` looks 10 m ahead for steering and 24 m ahead for corner braking. Boosts last 0.8 seconds and are allowed on straight sections, with 12-14 second intervals.
-
-`RaceManager.gd` creates Juniper, Kodiak and Mika with throttle targets of 0.82, 0.88 and 0.94 and lanes at -3.1, 0 and 3.1 m. Passing offsets stay within 3.8 m of the center. There is no rubber-banding. Run `tests/npc_race.gd` after changing these values; it validates both autonomous completion and a winnable player race.
+Run `tools/test_game.ps1` after changing handling. Automated completion proves traversability; human playtesting is still needed to tune feel and competitive balance.

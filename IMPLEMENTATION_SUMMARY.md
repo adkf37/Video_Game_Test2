@@ -1,3 +1,17 @@
+# Three-course combat and garage update - November 14, 2026
+
+Added physical sled bounces, sideways whip attacks (E / gamepad X), passing and attacking rivals, and Easy / Medium / Hard settings. Difficulty adjusts road width, off-track speed and rival pace/aggression.
+
+The garage now offers four huskies, eight corgis, two mastiffs or twelve chihuahuas, with distinct proportions and animated layouts. Choose a wooden, carbon racing, chocolate or royal throne sled. Alpine Valley is joined by separate Jungle Rush and Candy Kingdom courses, each with procedural scenery.
+
+Continuous signed route progress replaces missed checkpoint gates. Leaving the trail imposes a strong slowdown and disables boost; recovery uses the nearest trail point. Each course/difficulty combination has separate personal records, while legacy records are preserved.
+
+Validation: 30 race smoke checks and 15 physical contact/whip checks passed. A steering bot completed three laps on every course; all three NPCs finished every course at all three difficulties without recovery (27 finishes). Rendered previews cover every breed and sled, all three environments and a whip impact. Live garage selections, race launch, pause/resume and the whip key were checked in the native window. Logical-key fallbacks also support virtual/accessibility keyboards; a simulated Escape event is covered by the smoke suite. Tests do not overwrite player records.
+
+See the README for current behavior and controls. The following entries describe earlier milestones and are retained as history; their checkpoint and non-blocking collision descriptions are superseded above.
+
+---
+
 # NPC racing update - November 14, 2026
 
 Added three named, color-coded rival dog teams using the shared sled physics. The game now opens a four-team race with live positions, a leaderboard, minimap opponents and a finish table. Each rival validates its own checkpoints and laps; finish order is locked as teams cross the line. Remaining rivals finish naturally after the player's results screen appears.

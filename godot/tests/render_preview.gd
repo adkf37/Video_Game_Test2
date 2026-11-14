@@ -1,77 +1,59 @@
 extends SceneTree
-## Render reproducible previews without writing player records.
-var scene: Node3D
+## Reproducible live garage and track previews; never writes player records.
 func _initialize() -> void:
 	call_deferred("_run")
-func settle(count: int) -> void:
-	for i in range(count):
+func frames(n: int) -> void:
+	for i in range(n):
 		await process_frame
 func capture(filename: String) -> void:
 	await RenderingServer.frame_post_draw
-	var path := ProjectSettings.globalize_path("res://../artifacts/" + filename)
-	root.get_texture().get_image().save_png(path)
-	print("PREVIEW: ", path)
+	root.get_texture().get_image().save_png(ProjectSettings.globalize_path("res://../artifacts/" + filename))
+	print("PREVIEW ", filename)
 func _run() -> void:
-	root.get_node("GameState").practice_run = true
-	scene = load("res://scenes/main/Main.tscn").instantiate()
-	root.add_child(scene)
-	current_scene = scene
-	await settle(120)
-	await capture("basecamp.png")
-	var race: Node = scene.get_node("RaceManager")
-	var sled: CharacterBody3D = scene.get_node("PlayerSled")
-	var track: AlpineTrack = scene.get_node("Track")
-	race.start()
-	race.countdown = 0.01
-	for tick in range(550):
-		await physics_frame
-		var near := track.nearest(sled.position)
-		var goal := track.frame_at(near.progress + 10.0 / track.total_length).origin
-		var forward := -sled.global_basis.z
-		var direction := (goal - sled.position).normalized()
-		direction.y = 0
-		forward.y = 0
-		var steer := clampf(-forward.signed_angle_to(direction, Vector3.UP) * 2.5, -1, 1)
-		Input.action_press("turn_left", maxf(-steer, 0))
-		Input.action_press("turn_right", maxf(steer, 0))
-		Input.action_press("move_forward", 0.85)
-		if tick == 130:
-			await capture("race-start.png")
-		if tick == 540:
-			await capture("alpine-trail.png")
-	for action in ["move_forward", "turn_left", "turn_right"]:
-		Input.action_release(action)
-	race.resume_state = race.state
-	race.state = race.RaceState.PAUSED
-	paused = true
-	await settle(2)
-	await capture("pause.png")
-	race.resume()
-	Engine.time_scale = 4.0
-	for tick in range(3000):
-		await physics_frame
-		if race.state == race.RaceState.FINISHED:
-			break
-		var near := track.nearest(sled.position)
-		var goal := track.frame_at(near.progress + 10.0 / track.total_length).origin
-		var forward := -sled.global_basis.z
-		var direction := (goal - sled.position).normalized()
-		direction.y = 0
-		forward.y = 0
-		var steer := clampf(-forward.signed_angle_to(direction, Vector3.UP) * 2.5, -1, 1)
-		Input.action_press("turn_left", maxf(-steer, 0))
-		Input.action_press("turn_right", maxf(steer, 0))
-		Input.action_press("move_forward", 0.85)
-	for action in ["move_forward", "turn_left", "turn_right"]:
-		Input.action_release(action)
-	for tick in range(1800):
-		await physics_frame
-		if race.finish_order.size() == 4:
-			break
-	Engine.time_scale = 1.0
-	await settle(120)
-	await capture("results.png")
-	print("RENDER FPS: ", Engine.get_frames_per_second())
-	scene.queue_free()
-	await process_frame
+	var state: Node = root.get_node("GameState")
+	state.practice_run = true
+	state.difficulty = 1
+	var choices := [[0, 0, 0, "basecamp.png"], [1, 2, 1, "jungle-mastiffs-racer.png"], [2, 3, 2, "candy-chihuahuas-chocolate.png"], [2, 1, 3, "corgis-throne.png"]]
+	for choice in choices:
+		state.course = choice[0]
+		state.breed = choice[1]
+		state.sled_style = choice[2]
+		var scene: Node3D = load("res://scenes/main/Main.tscn").instantiate()
+		root.add_child(scene)
+		current_scene = scene
+		await frames(120)
+		await capture(choice[3])
+		var race: Node = scene.get_node("RaceManager")
+		var sled: CharacterBody3D = scene.get_node("PlayerSled")
+		var track: AlpineTrack = scene.get_node("Track")
+		race.start()
+		race.countdown = 0.01
+		for tick in range(300):
+			await physics_frame
+			var near := track.nearest(sled.position)
+			var goal := track.frame_at(near.progress + 10 / track.total_length).origin
+			var forward := -sled.global_basis.z
+			var direction := (goal - sled.position).normalized()
+			forward.y = 0
+			direction.y = 0
+			var steering := clampf(-forward.signed_angle_to(direction, Vector3.UP) * 2.5, -1, 1)
+			Input.action_press("turn_left", maxf(-steering, 0))
+			Input.action_press("turn_right", maxf(steering, 0))
+			Input.action_press("move_forward", 0.8)
+		for action in ["move_forward", "turn_left", "turn_right"]:
+			Input.action_release(action)
+		await capture("track-%d-breed-%d.png" % [state.course, state.breed])
+		if state.course == 0:
+			# Isolate a side-by-side hit to inspect the swing at the contact instant.
+			var pose := track.frame_at(0.10)
+			sled.reset_to(pose)
+			var rival: CharacterBody3D = race.rivals[0]
+			pose.origin += pose.basis.x * 4.5
+			rival.reset_to(pose)
+			await physics_frame
+			sled.try_whip()
+			await frames(3)
+			await capture("whip-contact.png")
+		scene.queue_free()
+		await frames(2)
 	quit()

@@ -27,7 +27,7 @@ var player_finish_place := 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("race")
-	lap_tracker.setup(track.CHECKPOINT_COUNT)
+	lap_tracker.reset(-0.04)
 	lap_tracker.lap_completed.connect(_on_lap_completed)
 	call_deferred("_setup_grid")
 
@@ -41,15 +41,24 @@ func _setup_grid() -> void:
 		rival.racer_name = names[i]
 		rival.team_color = colors[i]
 		rival.grid_index = i
-		rival.lane = (i - 1) * 3.1
-		rival.cruise_throttle = 0.82 + i * 0.06
+		rival.lane = (i - 1) * track.half_width * 0.36
+		rival.cruise_throttle = RaceCatalog.NPC_PACE[GameState.difficulty] + (i - 1) * 0.025
+		rival.get_node("DogTeam").breed = (i + 1) % 4
+		rival.get_node("DogTeam").sled_style = (i + 1) % 4
 		rival.get_node("DogTeam").team_color = colors[i]
 		get_parent().add_child(rival)
 		rivals.append(rival)
+	apply_customization()
 	_place_at_start()
+
+func apply_customization() -> void:
+	sled.visual.breed = GameState.breed
+	sled.visual.sled_style = GameState.sled_style
+	sled.visual.rebuild()
 
 func _place_at_start() -> void:
 	sled.reset_to(track.frame_at(-0.04))
+	lap_tracker.reset(-0.04)
 	for rival in rivals:
 		rival.reset_race()
 
@@ -66,7 +75,7 @@ func start() -> void:
 	lap_start = 0.0
 	current_lap = 0
 	lap_times.clear()
-	lap_tracker.setup(track.CHECKPOINT_COUNT)
+	lap_tracker.reset(-0.04)
 	new_record = false
 	recovery_cooldown = 0.0
 	sled.boost_energy = 100.0
@@ -112,14 +121,13 @@ func menu() -> void:
 	state = RaceState.MENU
 	_place_at_start()
 
-func checkpoint_hit(index: int, racer: Node = null) -> bool:
-	if racer != null and racer != sled:
-		if racer in rivals and state in [RaceState.RACING, RaceState.FINISHED]:
-			return racer.accept_checkpoint(index)
-		return false
-	if state != RaceState.RACING:
-		return false
-	return lap_tracker.checkpoint_hit(index)
+func _physics_process(_delta: float) -> void:
+	if state == RaceState.RACING:
+		lap_tracker.sample(track.nearest(sled.global_position).progress)
+	if state in [RaceState.RACING, RaceState.FINISHED]:
+		for rival in rivals:
+			if not rival.finished:
+				rival.lap_tracker.sample(track.nearest(rival.global_position).progress)
 
 func _on_lap_completed(number: int) -> void:
 	lap_times.append(race_time - lap_start)
@@ -138,10 +146,9 @@ func _on_lap_completed(number: int) -> void:
 func recover() -> void:
 	if state != RaceState.RACING:
 		return
-	var progress: float = float(lap_tracker.last_checkpoint) / track.CHECKPOINT_COUNT + 0.008
-	if not lap_tracker.has_started:
-		progress = -0.04
+	var progress: float = track.nearest(sled.global_position).progress
 	sled.reset_to(track.frame_at(progress))
+	lap_tracker.rebase(progress)
 	race_time += SledTuning.RECOVERY_PENALTY
 	recovery_cooldown = 2.0
 	announcement.emit("BACK ON TRAIL   +3s")
@@ -157,19 +164,7 @@ func register_finish(racer: Node) -> void:
 
 func race_progress(racer: Node) -> float:
 	var tracker: Node = lap_tracker if racer == sled else racer.lap_tracker
-	var progress: float = track.nearest(racer.global_position).progress
-	if not tracker.has_started:
-		return progress - 1.0 if progress > 0.5 else 0.0
-	# Cap interpolation at the next required sector: shortcuts cannot gain rank.
-	var low: float = float(tracker.last_checkpoint) / track.CHECKPOINT_COUNT
-	var high: float = float(tracker.last_checkpoint + 1) / track.CHECKPOINT_COUNT
-	# A body's nose enters the finish volume before its center crosses zero.
-	# Treat that instant as the beginning of the sector, not its far end.
-	if tracker.last_checkpoint == 0 and progress > 0.5:
-		progress = 0.0
-	if tracker.next_checkpoint == 0 and progress < 0.5:
-		progress = 1.0
-	return tracker.current_lap + clampf(progress, low, high)
+	return tracker.race_progress()
 
 func standings() -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []

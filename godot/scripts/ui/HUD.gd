@@ -15,6 +15,7 @@ var lap_label: Label
 var speed_label: Label
 var boost_bar: ProgressBar
 var status_label: Label
+var whip_label: Label
 var best_label: Label
 var result_time: Label
 var result_details: Label
@@ -103,27 +104,51 @@ func _group() -> Control:
 
 func _build_menu() -> void:
 	menu_panel = _group()
-	_panel(menu_panel, Vector2(32, 30), Vector2(420, 660), Color(0.055, 0.15, 0.19, 0.94))
-	_label(menu_panel, "NORTHBOUND  /  WINTER SERIES", Vector2(67, 58), 14, CORAL)
-	_label(menu_panel, "DOGSLED\nKART", Vector2(63, 101), 64, CREAM, Vector2(380, 160))
-	_label(menu_panel, "Four paws. Fresh powder. Full send.", Vector2(67, 275), 17, MUTED)
-	_panel(menu_panel, Vector2(67, 330), Vector2(350, 112), Color("#244653"))
-	_label(menu_panel, "01   ALPINE VALLEY", Vector2(86, 340), 22)
-	_label(menu_panel, "4 TEAMS    /    3 LAPS", Vector2(86, 379), 13, CORAL)
-	best_label = _label(menu_panel, "Your first trail record awaits.", Vector2(86, 405), 14, MUTED)
-	start_button = _button(menu_panel, "Race the pack    >", Vector2(77, 468), manager.start)
-	_label(menu_panel, "WASD / arrows     Drive & brake\nSHIFT   Drift        SPACE   Mush boost\nR   Recover          ESC   Pause", Vector2(78, 540), 16, MUTED, Vector2(350, 85))
-	_label(menu_panel, "A little winter adventure.", Vector2(78, 640), 13, CORAL)
-	_label(menu_panel, "ALPINE VALLEY", Vector2(920, 48), 19, INK, Vector2(320, 40)).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_label(menu_panel, "A trail worth taking twice.", Vector2(920, 82), 14, INK, Vector2(320, 40)).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_panel(menu_panel, Vector2(30, 24), Vector2(422, 672), Color(0.055, 0.15, 0.19, 0.95))
+	_label(menu_panel, "THE GREAT DOGSLED TOUR", Vector2(65, 39), 13, CORAL)
+	_label(menu_panel, "DOGSLED KART", Vector2(62, 86), 36, CREAM, Vector2(370, 65))
+	_label(menu_panel, "Build your team. Take on the pack.", Vector2(65, 145), 16, MUTED)
+	_selector("TRACK", "course", RaceCatalog.COURSES, 211)
+	_selector("DIFFICULTY", "difficulty", RaceCatalog.DIFFICULTIES, 292)
+	var breeds: Array[String] = []
+	for i in range(4):
+		breeds.append("%s  /  %d dogs" % [RaceCatalog.BREEDS[i], RaceCatalog.TEAM_COUNTS[i]])
+	_selector("DOG TEAM", "breed", breeds, 373)
+	_selector("SLED", "sled_style", RaceCatalog.SLEDS, 454)
+	start_button = _button(menu_panel, "Race the pack    >", Vector2(76, 535), manager.start)
+	_label(menu_panel, "WASD drive   SHIFT drift   SPACE boost\nE whip   R recover   ESC pause", Vector2(65, 602), 14, MUTED, Vector2(365, 60))
+	best_label = _label(menu_panel, "", Vector2(65, 661), 12, CORAL, Vector2(360, 25))
+	_label(menu_panel, RaceCatalog.COURSES[GameState.course].to_upper(), Vector2(870, 44), 21, INK, Vector2(370, 40)).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_label(menu_panel, "4 TEAMS / 3 LAPS / " + RaceCatalog.DIFFICULTIES[GameState.difficulty].to_upper(), Vector2(870, 80), 13, INK, Vector2(370, 40)).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_button(menu_panel, "Quit", Vector2(900, 620), func(): get_tree().quit(), false)
+
+func _selector(caption: String, key: String, choices: Array, y: float) -> void:
+	_label(menu_panel, caption, Vector2(65, y - 32), 12, CORAL, Vector2(360, 27))
+	var option := OptionButton.new()
+	menu_panel.add_child(option)
+	option.position = Vector2(65, y)
+	option.size = Vector2(352, 43)
+	option.add_theme_font_size_override("font_size", 18)
+	option.add_theme_color_override("font_color", CREAM)
+	option.add_theme_stylebox_override("normal", _style(Color("#2a505c"), 7))
+	option.add_theme_stylebox_override("hover", _style(Color("#426673"), 7))
+	option.add_theme_stylebox_override("pressed", _style(Color("#426673"), 7))
+	for choice: String in choices:
+		option.add_item(choice)
+	option.select(GameState.get(key))
+	option.item_selected.connect(func(index: int):
+		GameState.set_option(key, index)
+		if key in ["course", "difficulty"]:
+			get_tree().reload_current_scene()
+		else:
+			manager.apply_customization())
 
 func _build_race() -> void:
 	race_panel = _group()
 	_panel(race_panel, Vector2(30, 28), Vector2(240, 114), Color(0.055, 0.15, 0.19, 0.88))
-	_label(race_panel, "ALPINE VALLEY", Vector2(50, 38), 13, CORAL)
+	_label(race_panel, RaceCatalog.COURSES[GameState.course].to_upper(), Vector2(50, 38), 13, CORAL)
 	lap_label = _label(race_panel, "LAP  1 / 3", Vector2(48, 65), 32)
-	_label(race_panel, "NORTHBOUND  /  PACK RACE", Vector2(50, 115), 10, MUTED)
+	_label(race_panel, "PACK RACE  /  " + RaceCatalog.DIFFICULTIES[GameState.difficulty].to_upper(), Vector2(50, 115), 10, MUTED)
 	_panel(race_panel, Vector2(30, 158), Vector2(240, 170), Color(0.055, 0.15, 0.19, 0.88))
 	_label(race_panel, "ON THE TRAIL", Vector2(50, 168), 12, CORAL)
 	leaderboard = _label(race_panel, "", Vector2(50, 208), 18, CREAM, Vector2(210, 115))
@@ -144,6 +169,8 @@ func _build_race() -> void:
 	boost_bar.show_percentage = false
 	boost_bar.add_theme_stylebox_override("background", _style(Color("#3b5f6c"), 4))
 	boost_bar.add_theme_stylebox_override("fill", _style(CORAL, 4))
+	whip_label = _label(race_panel, "E  /  WHIP READY", Vector2(350, 620), 16, INK, Vector2(580, 38))
+	whip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label = _label(race_panel, "", Vector2(350, 555), 17, INK, Vector2(580, 38))
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var map := Control.new()
@@ -154,7 +181,7 @@ func _build_race() -> void:
 	race_panel.add_child(map)
 	map.position = Vector2(1020, 490)
 	map.size = Vector2(230, 198)
-	_label(race_panel, "SHIFT  drift     SPACE  boost     R  recover     ESC  pause", Vector2(365, 665), 13, INK)
+	_label(race_panel, "SHIFT drift   SPACE boost   E whip   R recover   ESC pause", Vector2(365, 665), 13, INK)
 	countdown_label = _label(race_panel, "", Vector2(300, 230), 100, INK, Vector2(680, 160))
 	countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast = _label(race_panel, "", Vector2(280, 177), 32, INK, Vector2(720, 60))
@@ -179,8 +206,8 @@ func _build_results() -> void:
 	_panel(results_panel, Vector2(390, 65), Vector2(500, 590), INK)
 	record_label = _label(results_panel, "TRAIL COMPLETE", Vector2(442, 100), 17, CORAL)
 	result_heading = _label(results_panel, "Good dogs. Great run.", Vector2(442, 145), 32)
-	result_time = _label(results_panel, "", Vector2(442, 204), 60)
-	_label(results_panel, "YOUR TIME  /  includes recovery penalties", Vector2(446, 267), 12, MUTED)
+	result_time = _label(results_panel, "", Vector2(442, 204), 54)
+	_label(results_panel, "YOUR TIME  /  includes recovery penalties", Vector2(446, 280), 12, MUTED)
 	result_details = _label(results_panel, "", Vector2(446, 307), 18, MUTED, Vector2(390, 133))
 	result_laps = _label(results_panel, "", Vector2(446, 436), 12, MUTED, Vector2(390, 43))
 	again_button = _button(results_panel, "One more run    >", Vector2(475, 487), manager.restart)
@@ -244,6 +271,7 @@ func _process(delta: float) -> void:
 	lap_label.text = "LAP  %d / 3" % mini(manager.current_lap + 1, 3)
 	speed_label.text = "%d" % roundi(sled.get_speed_kph())
 	boost_bar.value = sled.boost_energy
+	whip_label.text = "E  /  WHIP READY" if sled.whip_cooldown <= 0 else "WHIP RECHARGING  %.1fs" % sled.whip_cooldown
 	countdown_label.text = str(clampi(ceili(manager.countdown), 1, 3)) if manager.state == manager.RaceState.COUNTDOWN else ""
 	audio_label.text = "M  /  SOUND OFF" if GameState.muted else "M  /  SOUND ON"
 	if not pause_panel.visible:
@@ -253,14 +281,10 @@ func _process(delta: float) -> void:
 	if manager.state == manager.RaceState.RACING:
 		var forward := -sled.global_basis.z
 		var route_forward: Vector3 = -sled.track.frame_at(sled.route_progress).basis.z
-		var expected: float = float(manager.lap_tracker.next_checkpoint) / sled.track.CHECKPOINT_COUNT
-		var beyond := fposmod(sled.route_progress - expected, 1.0)
 		if forward.dot(route_forward) < -0.3 and sled.get_speed_kph() > 5:
 			status_label.text = "WRONG WAY  /  turn around"
-		elif beyond > 0.035 and beyond < 0.5:
-			status_label.text = "MISSED A MARKER  /  R to return to trail"
 		elif sled.offroad:
-			status_label.text = "DEEP SNOW  /  head back to the blue trail"
+			status_label.text = "OFF TRAIL  /  heavy slowdown"
 		elif sled.boosting:
 			status_label.text = "MUSH!"
 		elif sled.drifting:

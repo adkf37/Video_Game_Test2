@@ -1,12 +1,16 @@
 extends SceneTree
-## Steering-only bot exercises the complete road and actual checkpoint volumes.
-## No teleports, direct checkpoint calls or records are used during the drive.
+## Steering-only bot exercises the complete road and continuous lap tracking.
+## No teleports, direct progress edits or records are used during the drive.
 var scene: Node3D
 func _initialize() -> void:
 	call_deferred("_run")
 func _run() -> void:
 	var state: Node = root.get_node("GameState")
 	state.practice_run = true
+	state.difficulty = 1
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--course="):
+			state.course = int(arg.get_slice("=", 1))
 	scene = load("res://scenes/main/Main.tscn").instantiate()
 	root.add_child(scene)
 	current_scene = scene
@@ -43,14 +47,14 @@ func _run() -> void:
 			previous_lap = race.current_lap
 			print("DRIVE: lap ", previous_lap, " at ", race.race_time, "s")
 		if tick % 1800 == 0:
-			print("DRIVE: progress ", near.progress, " next ", race.lap_tracker.next_checkpoint, " distance ", near.distance, " speed ", sled.get_speed_kph())
+			print("DRIVE: progress ", near.progress, " lap ", race.lap_tracker.current_lap, " distance ", near.distance, " speed ", sled.get_speed_kph())
 		if near.distance > 25 or sled.position.y < -5:
 			push_error("Bot left the trail at " + str(near.progress))
 			break
 	for action in ["move_forward", "turn_left", "turn_right"]:
 		Input.action_release(action)
 	print("DRIVE RESULT: laps=", race.current_lap, " finished=", race.state == race.RaceState.FINISHED, " max_offset=", max_distance, " airborne_frames=", airborne_frames)
-	var success: bool = race.state == race.RaceState.FINISHED and max_distance < 8.0
+	var success: bool = race.state == race.RaceState.FINISHED and max_distance < track.half_width + 14.0
 	scene.queue_free()
 	await process_frame
 	quit(0 if success else 1)

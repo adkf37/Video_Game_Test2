@@ -1,16 +1,12 @@
 # Setup
 
-The current rebuild is ready to run. There are no manual scene or autoload setup steps.
-
 1. Open `godot/project.godot` in Godot 4.6.3.
 2. Press F5.
-3. Choose **Race the pack**.
-4. Drive with WASD; Shift drifts, Space boosts, Esc pauses.
+3. Choose a track, difficulty, dog team and sled, then **Race the pack**.
+4. Drive with WASD; Shift drifts, Space boosts, E whips, R recovers and Esc pauses.
 
-Alternatively, run `tools/run_game.ps1` from PowerShell, supplying `-GodotPath` if Godot is not found automatically.
+Alternatively, run `tools/run_game.ps1`, supplying `-GodotPath` if Godot is not found automatically.
 
-The only autoload is `GameState`. The main scene is `scenes/main/Main.tscn`. Compatibility rendering is enabled.
+No manual scene or autoload setup is needed. The autoload is `GameState`; the main scene is `scenes/main/Main.tscn`. Compatibility rendering is enabled. All art is generated locally.
 
-See the root README for tests and limitations. Earlier proposals for course and achievement managers are not active features of this milestone.
-
-Three NPC teams join every race. No additional setup is needed.
+See the root README for the validation runner, controls and save behavior.

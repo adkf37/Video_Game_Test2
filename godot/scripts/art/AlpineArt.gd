@@ -40,5 +40,8 @@ static func cone(parent: Node3D, pos: Vector3, radius: float, height: float, mat
 
 static func beam(parent: Node3D, from: Vector3, to: Vector3, thickness: float, mat: Material) -> MeshInstance3D:
 	var item := box(parent, (from + to) * 0.5, Vector3(thickness, thickness, from.distance_to(to)), mat)
-	item.look_at_from_position(item.position, to, Vector3.UP)
+	var direction := (to - from).normalized()
+	var up := Vector3.FORWARD if absf(direction.dot(Vector3.UP)) > 0.999 else Vector3.UP
+	# Endpoints are local to the parent, including already-rotated moving sleds.
+	item.basis = Basis.looking_at(direction, up)
 	return item

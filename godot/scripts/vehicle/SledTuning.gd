@@ -1,5 +1,5 @@
 class_name SledTuning
-## Movement values live here. See docs/tuning.md for units and feel.
+## All handling and contact tuning; course/difficulty choices live in RaceCatalog.
 const ACCELERATION := 12.0
 const MAX_SPEED := 25.0
 const REVERSE_SPEED := 6.0
@@ -10,7 +10,7 @@ const STEER_RESPONSE := 6.0
 const GRIP := 7.0
 const DRIFT_GRIP := 1.8
 const DRIFT_TURN := 1.3
-const OFFROAD_SPEED := 13.0
+const OFFROAD_BRAKE := 32.0
 const BOOST_SPEED := 36.0
 const BOOST_ACCEL := 22.0
 const BOOST_DRAIN := 38.0
@@ -19,3 +19,12 @@ const GRAVITY := 22.0
 const RECOVERY_PENALTY := 3.0
 const CAMERA_DISTANCE := 10.5
 const CAMERA_HEIGHT := 5.5
+const BOUNCE_RESTITUTION := 0.6
+const BUMP_COOLDOWN := 0.3
+const MAX_BUMP_IMPULSE := 45.0
+const IMPACT_DECAY := 20.0
+const MAX_IMPACT_SPEED := 55.0
+const WHIP_RANGE := 6.0
+const WHIP_KNOCKBACK := 11.0
+const WHIP_COOLDOWN := 3.5
+const HIT_IMMUNITY := 0.8

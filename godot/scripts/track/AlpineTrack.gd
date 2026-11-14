@@ -1,10 +1,10 @@
 class_name AlpineTrack
 extends Node3D
-## One deterministic spline supplies road, checkpoints, scenery and minimap.
-const CHECKPOINT_COUNT := 16
+## Three themed spline courses; road width follows the selected difficulty.
 const SAMPLES := 320
-const HALF_WIDTH := 8.0
-const CP_SCRIPT = preload("res://scripts/track/Checkpoint.gd")
+var half_width := 8.0
+var theme := 0
+var course_name := "Alpine Valley"
 var points := PackedVector3Array()
 var lengths := PackedFloat32Array()
 var total_length := 0.0
@@ -19,12 +19,24 @@ var coral := AlpineArt.material(Color("#eb795d"))
 var navy := AlpineArt.material(Color("#244759"))
 
 func _ready() -> void:
+	var settings: Node = get_tree().root.get_node("GameState")
+	theme = settings.course
+	half_width = RaceCatalog.WIDTHS[settings.difficulty]
+	course_name = RaceCatalog.COURSES[theme]
+	if theme == 1:
+		snow = AlpineArt.material(Color("#527441"))
+		trail = AlpineArt.material(Color("#987c54"))
+		bank = AlpineArt.material(Color("#779156"))
+	elif theme == 2:
+		snow = AlpineArt.material(Color("#f5d7e4"))
+		trail = AlpineArt.material(Color("#caa3c2"))
+		bank = AlpineArt.material(Color("#fff0cf"))
 	rng.seed = 2048
 	_build_path()
 	_build_ribbon()
 	_build_scenery()
-	_build_checkpoints()
 	_build_start()
+	call_deferred("_apply_environment")
 
 func _build_path() -> void:
 	var anchors: Array[Vector3] = [
@@ -33,6 +45,10 @@ func _build_path() -> void:
 		Vector3(-5, 5, -72), Vector3(29, 2, -52), Vector3(62, 1, -58),
 		Vector3(91, 2, -28), Vector3(85, 4, 8), Vector3(58, 3, 23),
 		Vector3(55, 1, 55), Vector3(30, 0, 73)]
+	if theme == 1:
+		anchors = [Vector3(0, 0, 75), Vector3(-45, 1, 72), Vector3(-92, 3, 45), Vector3(-108, 5, 2), Vector3(-88, 6, -43), Vector3(-42, 2, -61), Vector3(-2, 0, -48), Vector3(35, 1, -70), Vector3(82, 3, -62), Vector3(108, 5, -16), Vector3(91, 2, 28), Vector3(52, 0, 57)]
+	elif theme == 2:
+		anchors = [Vector3(0, 0, 80), Vector3(-50, 0, 80), Vector3(-88, 3, 48), Vector3(-83, 6, 2), Vector3(-105, 3, -36), Vector3(-75, 0, -78), Vector3(-22, 2, -82), Vector3(20, 5, -62), Vector3(70, 2, -82), Vector3(108, 0, -42), Vector3(88, 4, 0), Vector3(100, 3, 42), Vector3(55, 0, 77)]
 	for i in range(SAMPLES):
 		var t := float(i) / SAMPLES * anchors.size()
 		var j := int(t)
@@ -83,7 +99,7 @@ func _vertex(index: int, offset: float, rise: float) -> Vector3:
 
 func _build_ribbon() -> void:
 	# Wide snowy shoulders physically support recovery; the raised lip is forgiving.
-	var widths := [-35.0, -15.0, -10.0, -8.0, 8.0, 10.0, 15.0, 35.0]
+	var widths := [-35.0, -half_width - 7, -half_width - 2, -half_width, half_width, half_width + 2, half_width + 7, 35.0]
 	var heights := [-2.0, 0.4, 0.65, 0.0, 0.0, 0.65, 0.4, -2.0]
 	var road_mesh := ArrayMesh.new()
 	for strip in range(widths.size() - 1):
@@ -114,6 +130,9 @@ func _build_ribbon() -> void:
 	shape.position.y = -4
 
 func _build_scenery() -> void:
+	if theme > 0:
+		BiomeDecor.build(self, theme)
+		return
 	for i in range(260):
 		var frame := frame_at(rng.randf())
 		var side := -1.0 if rng.randf() < 0.5 else 1.0
@@ -194,37 +213,39 @@ func _cabin(pos: Vector3, angle: float) -> void:
 	AlpineArt.box(cabin, Vector3(0, 1.3, -3.55), Vector3(1.5, 2.6, 0.1), navy)
 	AlpineArt.box(cabin, Vector3(2.5, 6, 1), Vector3(1.1, 3, 1.1), navy)
 
-func _build_checkpoints() -> void:
-	for i in range(CHECKPOINT_COUNT):
-		var frame := frame_at(float(i) / CHECKPOINT_COUNT)
-		var area := Area3D.new()
-		area.set_script(CP_SCRIPT)
-		area.checkpoint_index = i
-		area.forward = -frame.basis.z
-		var collision := CollisionShape3D.new()
-		var shape := BoxShape3D.new()
-		shape.size = Vector3(22, 9, 2.0)
-		collision.shape = shape
-		area.add_child(collision)
-		add_child(area)
-		area.transform = frame
-		area.position.y += 3.0
-
 func _build_start() -> void:
 	var start := Node3D.new()
 	add_child(start)
 	start.transform = frame_at(0.0)
-	for x: float in [-9.2, 9.2]:
+	for x: float in [-half_width - 1.2, half_width + 1.2]:
 		AlpineArt.box(start, Vector3(x, 5.0, 0), Vector3(0.45, 10, 0.45), wood)
 		AlpineArt.box(start, Vector3(x, 9.6, 0), Vector3(0.8, 0.4, 0.8), coral)
-	AlpineArt.box(start, Vector3(0, 9.0, 0), Vector3(18.8, 1.4, 0.25), navy)
+	AlpineArt.box(start, Vector3(0, 9.0, 0), Vector3(half_width * 2 + 2.8, 1.4, 0.25), navy)
 	var label := Label3D.new()
 	start.add_child(label)
 	label.position = Vector3(0, 9.0, 0.2)
-	label.text = "A L P I N E   V A L L E Y"
+	label.text = course_name.to_upper()
 	label.font_size = 90
 	label.pixel_size = 0.011
 	label.modulate = Color("#fff6d9")
-	for i in range(16):
+	for i in range(int(half_width * 2)):
 		for row in range(2):
-			AlpineArt.box(start, Vector3(-7.5 + i, 0.025, row * 0.7 - 0.35), Vector3(1, 0.035, 0.7), navy if (i + row) % 2 == 0 else snow)
+			AlpineArt.box(start, Vector3(-half_width + 0.5 + i, 0.025, row * 0.7 - 0.35), Vector3(1, 0.035, 0.7), navy if (i + row) % 2 == 0 else snow)
+
+func _apply_environment() -> void:
+	var world: WorldEnvironment = get_parent().get_node("WorldEnvironment")
+	if theme == 0:
+		return
+	world.environment = world.environment.duplicate()
+	# Solid themed skies avoid rebuilding radiance cubemaps on every garage reload.
+	world.environment.sky = null
+	world.environment.background_mode = Environment.BG_COLOR
+	world.environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	if theme == 1:
+		world.environment.background_color = Color("#bed4a5")
+		world.environment.fog_light_color = Color("#94b68b")
+		world.environment.ambient_light_color = Color("#b9d3a4")
+	elif theme == 2:
+		world.environment.background_color = Color("#f5c4df")
+		world.environment.fog_light_color = Color("#e2bbd9")
+		world.environment.ambient_light_color = Color("#ddcbe4")
