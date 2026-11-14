@@ -1,0 +1,44 @@
+class_name AlpineArt
+extends RefCounted
+## Original low-poly geometry shared by the trail and dog team.
+static func material(color: Color, roughness: float = 0.9) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = color
+	mat.roughness = roughness
+	return mat
+
+static func mesh(parent: Node3D, shape: Mesh, pos: Vector3, mat: Material) -> MeshInstance3D:
+	var item := MeshInstance3D.new()
+	item.mesh = shape
+	item.material_override = mat
+	parent.add_child(item)
+	item.position = pos
+	return item
+
+static func box(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:
+	var shape := BoxMesh.new()
+	shape.size = size
+	return mesh(parent, shape, pos, mat)
+
+static func ellipsoid(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:
+	var shape := SphereMesh.new()
+	shape.radial_segments = 10
+	shape.rings = 5
+	shape.radius = 0.5
+	shape.height = 1.0
+	var item := mesh(parent, shape, pos, mat)
+	item.scale = size
+	return item
+
+static func cone(parent: Node3D, pos: Vector3, radius: float, height: float, mat: Material, top: float = 0.0) -> MeshInstance3D:
+	var shape := CylinderMesh.new()
+	shape.top_radius = top
+	shape.bottom_radius = radius
+	shape.height = height
+	shape.radial_segments = 7
+	return mesh(parent, shape, pos, mat)
+
+static func beam(parent: Node3D, from: Vector3, to: Vector3, thickness: float, mat: Material) -> MeshInstance3D:
+	var item := box(parent, (from + to) * 0.5, Vector3(thickness, thickness, from.distance_to(to)), mat)
+	item.look_at_from_position(item.position, to, Vector3.UP)
+	return item

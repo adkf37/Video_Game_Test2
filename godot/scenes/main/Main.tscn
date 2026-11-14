@@ -1,50 +1,68 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=12 format=3]
 
-[ext_resource type="PackedScene" path="res://scenes/vehicles/Sled.tscn" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/tracks/Track_Alpine01.tscn" id="2"]
-[ext_resource type="Script" path="res://scripts/camera/ChaseCamera.gd" id="3"]
-[ext_resource type="Script" path="res://scripts/core/RaceManager.gd" id="4"]
-[ext_resource type="Script" path="res://scripts/track/LapTracker.gd" id="5"]
-[ext_resource type="PackedScene" path="res://scenes/ui/HUD.tscn" id="6"]
+[ext_resource type="Script" path="res://scripts/track/AlpineTrack.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/Sled.tscn" id="2"]
+[ext_resource type="Script" path="res://scripts/core/RaceManager.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/track/LapTracker.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/camera/ChaseCamera.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/ui/HUD.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/core/RaceAudio.gd" id="7"]
+
+[sub_resource type="ProceduralSkyMaterial" id="sky_material"]
+sky_top_color = Color(0.25, 0.49, 0.62, 1)
+sky_horizon_color = Color(0.86, 0.87, 0.82, 1)
+ground_bottom_color = Color(0.61, 0.74, 0.8, 1)
+ground_horizon_color = Color(0.86, 0.87, 0.82, 1)
+sky_curve = 0.18
 
 [sub_resource type="Sky" id="sky"]
+sky_material = SubResource("sky_material")
 
 [sub_resource type="Environment" id="environment"]
-background_mode = 1
-background_color = Color(0.5, 0.7, 0.9, 1)
+background_mode = 2
 sky = SubResource("sky")
 ambient_light_source = 3
-ambient_light_color = Color(0.9, 0.95, 1, 1)
-ambient_light_energy = 1.0
+ambient_light_color = Color(0.64, 0.78, 0.93, 1)
+ambient_light_energy = 0.4
+tonemap_mode = 2
+fog_enabled = true
+fog_light_color = Color(0.67, 0.8, 0.86, 1)
+fog_density = 0.0015
 
-[node name="Main" type="Node3D"]
+[sub_resource type="CameraAttributesPractical" id="attributes"]
+auto_exposure_enabled = false
+exposure_multiplier = 0.75
+
+[node name="AlpineValley" type="Node3D"]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("environment")
 
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.866, -0.25, 0.433, 0, 0.866, 0.5, -0.5, -0.433, 0.75, 0, 20, 0)
-light_color = Color(1, 0.98, 0.95, 1)
-light_energy = 1.5
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-32, -40, 0)
+light_color = Color(1, 0.87, 0.7, 1)
+light_energy = 0.7
 shadow_enabled = true
+directional_shadow_max_distance = 140.0
 
-[node name="Track" parent="." instance=ExtResource("2")]
+[node name="Track" type="Node3D" parent="."]
+script = ExtResource("1")
+
+[node name="PlayerSled" parent="." instance=ExtResource("2")]
 
 [node name="RaceManager" type="Node" parent="."]
-script = ExtResource("4")
-max_laps = 3
-num_checkpoints = 8
-
-[node name="LapTracker" type="Node" parent="RaceManager"]
-script = ExtResource("5")
-
-[node name="PlayerSled" parent="." instance=ExtResource("1")]
-transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 20, 0.5, 45)
-
-[node name="ChaseCamera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.866, -0.5, 0, 0.5, 0.866, 20, 6, 57)
-current = true
-fov = 75.0
 script = ExtResource("3")
 
-[node name="HUD" parent="." instance=ExtResource("6")]
+[node name="LapTracker" type="Node" parent="RaceManager"]
+script = ExtResource("4")
+
+[node name="ChaseCamera" type="Camera3D" parent="."]
+current = true
+attributes = SubResource("attributes")
+script = ExtResource("5")
+
+[node name="RaceAudio" type="Node" parent="."]
+script = ExtResource("7")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("6")

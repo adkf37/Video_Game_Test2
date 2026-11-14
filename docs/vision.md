@@ -1,18 +1,18 @@
-# Dogsled Kart — Vision
+# Dogsled Kart
 
-## Elevator Pitch
-A lightweight 3D dogsled racing game with arcade handling and Mario Kart–style vibes.
-Single-player time-trial first; AI opponents planned for Phase 3+.
+A cheerful, lightweight winter racer: a team of dogs, a satisfying sliding sled, and a trail worth learning.
 
-## Design Pillars
-1. **Arcade feel** — responsive steering, forgiving collisions, fun boosts.
-2. **Readable racecraft** — clear corners, visible track boundaries, simple hazards.
-3. **Fast iteration** — minimal art requirements early; swap placeholder assets later.
-4. **Single-player first** — AI opponents optional in Phase 3+.
+## Current milestone
 
-## Core Loop
-Start → Race laps → Pick up powerups → Finish → Results → Restart or Menu.
+A four-team Alpine Valley race: basecamp, countdown, three laps, lap splits, personal best and retry. It includes animated procedural dogs, a snowy environment, drift, boost, sound and recovery.
 
-## Current Status
-- Phase 0 complete: repo scaffold, main menu, placeholder sled movement on flat plane.
-- Phase 1 in progress: chase camera, track, lap system, HUD.
+## Priorities
+
+1. Handling that feels responsive and readable.
+2. Dogs with visible personality.
+3. A clear racing line through a memorable winter landscape.
+4. Fast iteration in a self-contained Godot project.
+
+## Next
+
+Human handling feedback, more distinct track sections, difficulty options and richer animation. Three NPC teams now race the same course; additional courses remain future work.

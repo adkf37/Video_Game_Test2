@@ -1,60 +1,267 @@
 extends CanvasLayer
-## In-race HUD: timer, lap counter, speed, and finish panel.
-
-@onready var timer_label: Label = $MarginContainer/VBoxContainer/TimerLabel
-@onready var lap_label: Label = $MarginContainer/VBoxContainer/LapLabel
-@onready var speed_label: Label = $MarginContainer/VBoxContainer/SpeedLabel
-@onready var checkpoint_label: Label = $MarginContainer/VBoxContainer/CheckpointLabel
-@onready var finish_panel: PanelContainer = $FinishPanel
-@onready var finish_time_label: Label = $FinishPanel/VBoxContainer/FinishTimeLabel
-@onready var restart_button: Button = $FinishPanel/VBoxContainer/RestartButton
-
-var race_manager: Node = null
-var player_sled: Node = null
+## A responsive 1280x720 canvas. World stays visible behind menus.
+const INK := Color("#153746")
+const CREAM := Color("#fff8e7")
+const MUTED := Color("#bed3d7")
+const CORAL := Color("#ed8668")
+var root: Control
+var menu_panel: Control
+var race_panel: Control
+var pause_panel: Control
+var results_panel: Control
+var countdown_label: Label
+var timer_label: Label
+var lap_label: Label
+var speed_label: Label
+var boost_bar: ProgressBar
+var status_label: Label
+var best_label: Label
+var result_time: Label
+var result_details: Label
+var record_label: Label
+var audio_label: Label
+var toast: Label
+var toast_remaining := 0.0
+var last_state := -1
+var position_label: Label
+var leaderboard: Label
+var result_heading: Label
+var result_laps: Label
+var standings_refresh := 0.0
+var start_button: Button
+var resume_button: Button
+var again_button: Button
+@onready var manager: Node = get_parent().get_node("RaceManager")
+@onready var sled: Node3D = get_parent().get_node("PlayerSled")
 
 func _ready() -> void:
-	finish_panel.visible = false
-	restart_button.pressed.connect(_on_restart_pressed)
-	# Find RaceManager and PlayerSled
-	await get_tree().process_frame
-	race_manager = get_tree().root.find_child("RaceManager", true, false)
-	player_sled = get_tree().root.find_child("PlayerSled", true, false)
-	if race_manager:
-		race_manager.race_finished.connect(_on_race_finished)
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	root = Control.new()
+	add_child(root)
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_build_menu()
+	_build_race()
+	_build_pause()
+	_build_results()
+	manager.announcement.connect(_announce)
+	manager.race_finished.connect(_finished)
 
-func _process(_delta: float) -> void:
-	if not race_manager:
-		return
+func _label(parent: Node, text: String, pos: Vector2, font_size: int, color: Color = CREAM, dimensions: Vector2 = Vector2(600, 55)) -> Label:
+	var label := Label.new()
+	parent.add_child(label)
+	label.position = pos
+	label.size = dimensions
+	label.text = text
+	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_color_override("font_color", color)
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return label
 
-	# Timer
-	timer_label.text = race_manager.get_time_string()
+func _style(color: Color, radius: int = 12) -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = color
+	style.set_corner_radius_all(radius)
+	style.content_margin_left = 20
+	style.content_margin_right = 20
+	return style
 
-	# Lap
-	var lap_current = race_manager.current_lap + 1
-	if race_manager.state == race_manager.RaceState.FINISHED:
-		lap_current = race_manager.max_laps
-	lap_label.text = "Lap %d / %d" % [mini(lap_current, race_manager.max_laps), race_manager.max_laps]
+func _panel(parent: Node, pos: Vector2, dimensions: Vector2, color: Color) -> Panel:
+	var panel := Panel.new()
+	parent.add_child(panel)
+	panel.position = pos
+	panel.size = dimensions
+	panel.add_theme_stylebox_override("panel", _style(color))
+	return panel
 
-	# Speed
-	if player_sled and player_sled.has_method("get_speed_kph"):
-		speed_label.text = "%d km/h" % int(player_sled.get_speed_kph())
-	else:
-		speed_label.text = "0 km/h"
+func _button(parent: Node, text: String, pos: Vector2, callback: Callable, primary: bool = true) -> Button:
+	var button := Button.new()
+	parent.add_child(button)
+	button.position = pos
+	button.size = Vector2(330, 52)
+	button.text = text
+	button.add_theme_font_size_override("font_size", 19)
+	button.add_theme_color_override("font_color", INK if primary else CREAM)
+	button.add_theme_color_override("font_hover_color", INK)
+	button.add_theme_color_override("font_focus_color", INK if primary else CREAM)
+	button.add_theme_stylebox_override("normal", _style(CORAL if primary else Color("#2a505c"), 8))
+	button.add_theme_stylebox_override("hover", _style(Color("#ffd79b"), 8))
+	button.add_theme_stylebox_override("pressed", _style(Color("#dfb77b"), 8))
+	var focus := _style(Color(0, 0, 0, 0), 8)
+	focus.set_border_width_all(2)
+	focus.border_color = CREAM
+	button.add_theme_stylebox_override("focus", focus)
+	button.pressed.connect(callback)
+	return button
 
-	# Checkpoint progress
-	var tracker = race_manager.lap_tracker
-	if tracker:
-		var next_cp = tracker.next_checkpoint + 1
-		var total_cp = tracker.total_checkpoints
-		checkpoint_label.text = "CP %d / %d" % [mini(next_cp, total_cp), total_cp]
+func _group() -> Control:
+	var control := Control.new()
+	root.add_child(control)
+	control.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	control.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return control
 
-func _on_race_finished(final_time: float) -> void:
-	finish_panel.visible = true
-	var minutes := int(final_time) / 60
-	var seconds := int(final_time) % 60
-	var millis := int((final_time - int(final_time)) * 100)
-	finish_time_label.text = "Finished!\n%02d:%02d.%02d" % [minutes, seconds, millis]
+func _build_menu() -> void:
+	menu_panel = _group()
+	_panel(menu_panel, Vector2(32, 30), Vector2(420, 660), Color(0.055, 0.15, 0.19, 0.94))
+	_label(menu_panel, "NORTHBOUND  /  WINTER SERIES", Vector2(67, 58), 14, CORAL)
+	_label(menu_panel, "DOGSLED\nKART", Vector2(63, 101), 64, CREAM, Vector2(380, 160))
+	_label(menu_panel, "Four paws. Fresh powder. Full send.", Vector2(67, 275), 17, MUTED)
+	_panel(menu_panel, Vector2(67, 330), Vector2(350, 112), Color("#244653"))
+	_label(menu_panel, "01   ALPINE VALLEY", Vector2(86, 340), 22)
+	_label(menu_panel, "4 TEAMS    /    3 LAPS", Vector2(86, 379), 13, CORAL)
+	best_label = _label(menu_panel, "Your first trail record awaits.", Vector2(86, 405), 14, MUTED)
+	start_button = _button(menu_panel, "Race the pack    >", Vector2(77, 468), manager.start)
+	_label(menu_panel, "WASD / arrows     Drive & brake\nSHIFT   Drift        SPACE   Mush boost\nR   Recover          ESC   Pause", Vector2(78, 540), 16, MUTED, Vector2(350, 85))
+	_label(menu_panel, "A little winter adventure.", Vector2(78, 640), 13, CORAL)
+	_label(menu_panel, "ALPINE VALLEY", Vector2(920, 48), 19, INK, Vector2(320, 40)).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_label(menu_panel, "A trail worth taking twice.", Vector2(920, 82), 14, INK, Vector2(320, 40)).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	_button(menu_panel, "Quit", Vector2(900, 620), func(): get_tree().quit(), false)
 
-func _on_restart_pressed() -> void:
-	if race_manager:
-		race_manager.restart()
+func _build_race() -> void:
+	race_panel = _group()
+	_panel(race_panel, Vector2(30, 28), Vector2(240, 114), Color(0.055, 0.15, 0.19, 0.88))
+	_label(race_panel, "ALPINE VALLEY", Vector2(50, 38), 13, CORAL)
+	lap_label = _label(race_panel, "LAP  1 / 3", Vector2(48, 65), 32)
+	_label(race_panel, "NORTHBOUND  /  PACK RACE", Vector2(50, 115), 10, MUTED)
+	_panel(race_panel, Vector2(30, 158), Vector2(240, 170), Color(0.055, 0.15, 0.19, 0.88))
+	_label(race_panel, "ON THE TRAIL", Vector2(50, 168), 12, CORAL)
+	leaderboard = _label(race_panel, "", Vector2(50, 208), 18, CREAM, Vector2(210, 115))
+	_panel(race_panel, Vector2(550, 48), Vector2(180, 85), Color(0.055, 0.15, 0.19, 0.88))
+	position_label = _label(race_panel, "4 / 4", Vector2(550, 58), 40, CREAM, Vector2(180, 65))
+	position_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_panel(race_panel, Vector2(980, 28), Vector2(270, 114), Color(0.055, 0.15, 0.19, 0.88))
+	_label(race_panel, "TRAIL TIME", Vector2(1002, 38), 13, CORAL)
+	timer_label = _label(race_panel, "00:00.00", Vector2(999, 65), 36)
+	_panel(race_panel, Vector2(30, 560), Vector2(270, 128), Color(0.055, 0.15, 0.19, 0.88))
+	speed_label = _label(race_panel, "0", Vector2(50, 561), 46)
+	_label(race_panel, "KM/H", Vector2(159, 585), 13, MUTED)
+	_label(race_panel, "MUSH", Vector2(50, 638), 12, CORAL)
+	boost_bar = ProgressBar.new()
+	race_panel.add_child(boost_bar)
+	boost_bar.position = Vector2(113, 649)
+	boost_bar.size = Vector2(163, 9)
+	boost_bar.show_percentage = false
+	boost_bar.add_theme_stylebox_override("background", _style(Color("#3b5f6c"), 4))
+	boost_bar.add_theme_stylebox_override("fill", _style(CORAL, 4))
+	status_label = _label(race_panel, "", Vector2(350, 555), 17, INK, Vector2(580, 38))
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	var map := Control.new()
+	map.set_script(preload("res://scripts/ui/Minimap.gd"))
+	map.track = get_parent().get_node("Track")
+	map.sled = sled
+	map.manager = manager
+	race_panel.add_child(map)
+	map.position = Vector2(1020, 490)
+	map.size = Vector2(230, 198)
+	_label(race_panel, "SHIFT  drift     SPACE  boost     R  recover     ESC  pause", Vector2(365, 665), 13, INK)
+	countdown_label = _label(race_panel, "", Vector2(300, 230), 100, INK, Vector2(680, 160))
+	countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	toast = _label(race_panel, "", Vector2(280, 177), 32, INK, Vector2(720, 60))
+	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	audio_label = _label(root, "", Vector2(510, 14), 12, INK, Vector2(260, 30))
+	audio_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+
+func _build_pause() -> void:
+	pause_panel = _group()
+	_panel(pause_panel, Vector2.ZERO, Vector2(1280, 720), Color(0.04, 0.12, 0.17, 0.55))
+	_panel(pause_panel, Vector2(410, 128), Vector2(460, 465), INK)
+	_label(pause_panel, "TAKE A BREATHER", Vector2(470, 163), 15, CORAL)
+	_label(pause_panel, "Trail paused", Vector2(470, 204), 37)
+	_label(pause_panel, "Your team is ready when you are.", Vector2(470, 264), 16, MUTED)
+	resume_button = _button(pause_panel, "Keep mushing", Vector2(475, 327), manager.resume)
+	_button(pause_panel, "Start again", Vector2(475, 395), manager.restart, false)
+	_button(pause_panel, "Back to basecamp", Vector2(475, 463), manager.menu, false)
+
+func _build_results() -> void:
+	results_panel = _group()
+	_panel(results_panel, Vector2.ZERO, Vector2(1280, 720), Color(0.04, 0.12, 0.17, 0.4))
+	_panel(results_panel, Vector2(390, 65), Vector2(500, 590), INK)
+	record_label = _label(results_panel, "TRAIL COMPLETE", Vector2(442, 100), 17, CORAL)
+	result_heading = _label(results_panel, "Good dogs. Great run.", Vector2(442, 145), 32)
+	result_time = _label(results_panel, "", Vector2(442, 204), 60)
+	_label(results_panel, "YOUR TIME  /  includes recovery penalties", Vector2(446, 267), 12, MUTED)
+	result_details = _label(results_panel, "", Vector2(446, 307), 18, MUTED, Vector2(390, 133))
+	result_laps = _label(results_panel, "", Vector2(446, 436), 12, MUTED, Vector2(390, 43))
+	again_button = _button(results_panel, "One more run    >", Vector2(475, 487), manager.restart)
+	_button(results_panel, "Back to basecamp", Vector2(475, 555), manager.menu, false)
+
+func _announce(message: String) -> void:
+	toast.text = message
+	toast_remaining = 2.2
+
+func _finished(total: float) -> void:
+	result_time.text = GameState.time_text(total)
+	record_label.text = "FINISHED %d / 4" % manager.player_finish_place
+	if manager.new_record:
+		record_label.text += "   /   PERSONAL BEST"
+	result_heading.text = "You led the pack!" if manager.player_finish_place == 1 else "Good dogs. Great race."
+	result_laps.text = "LAPS  "
+	for lap: float in manager.lap_times:
+		result_laps.text += GameState.time_text(lap) + "   "
+	result_laps.text += "\nBEST  " + (GameState.time_text(GameState.best_time) if GameState.best_time > 0 else "--:--.--")
+	if GameState.save_error:
+		result_laps.text += "  (save failed)"
+	_refresh_standings()
+
+func _refresh_standings() -> void:
+	var rows: Array[Dictionary] = manager.standings()
+	leaderboard.text = ""
+	result_details.text = ""
+	for i in range(rows.size()):
+		var row := rows[i]
+		var name_text: String = row.name.to_upper() + ("  <" if row.player else "")
+		leaderboard.text += "%d   %s%s\n" % [i + 1, name_text, "  FIN" if row.finished else ""]
+		result_details.text += "%d   %-10s  %s\n" % [i + 1, row.name.to_upper(), GameState.time_text(row.time) if row.finished else "Racing..."]
+		if row.player:
+			position_label.text = "%d / 4" % (i + 1)
+
+func _process(delta: float) -> void:
+	standings_refresh -= delta
+	if standings_refresh <= 0:
+		_refresh_standings()
+		standings_refresh = 0.12
+	menu_panel.visible = manager.state == manager.RaceState.MENU
+	pause_panel.visible = manager.state == manager.RaceState.PAUSED
+	results_panel.visible = manager.state == manager.RaceState.FINISHED
+	race_panel.visible = not menu_panel.visible and not results_panel.visible and not pause_panel.visible
+	if manager.state != last_state:
+		last_state = manager.state
+		if manager.state != manager.RaceState.RACING:
+			toast_remaining = 0
+		if menu_panel.visible:
+			start_button.grab_focus()
+		elif pause_panel.visible:
+			resume_button.grab_focus()
+		elif results_panel.visible:
+			again_button.grab_focus()
+		else:
+			var focused := root.get_viewport().gui_get_focus_owner()
+			if focused:
+				focused.release_focus()
+	best_label.text = "BEST  " + GameState.time_text(GameState.best_time) if GameState.best_time > 0 else "Your first trail record awaits."
+	timer_label.text = GameState.time_text(manager.race_time)
+	lap_label.text = "LAP  %d / 3" % mini(manager.current_lap + 1, 3)
+	speed_label.text = "%d" % roundi(sled.get_speed_kph())
+	boost_bar.value = sled.boost_energy
+	countdown_label.text = str(clampi(ceili(manager.countdown), 1, 3)) if manager.state == manager.RaceState.COUNTDOWN else ""
+	audio_label.text = "M  /  SOUND OFF" if GameState.muted else "M  /  SOUND ON"
+	if not pause_panel.visible:
+		toast_remaining -= delta
+	toast.visible = toast_remaining > 0
+	status_label.text = ""
+	if manager.state == manager.RaceState.RACING:
+		var forward := -sled.global_basis.z
+		var route_forward: Vector3 = -sled.track.frame_at(sled.route_progress).basis.z
+		var expected: float = float(manager.lap_tracker.next_checkpoint) / sled.track.CHECKPOINT_COUNT
+		var beyond := fposmod(sled.route_progress - expected, 1.0)
+		if forward.dot(route_forward) < -0.3 and sled.get_speed_kph() > 5:
+			status_label.text = "WRONG WAY  /  turn around"
+		elif beyond > 0.035 and beyond < 0.5:
+			status_label.text = "MISSED A MARKER  /  R to return to trail"
+		elif sled.offroad:
+			status_label.text = "DEEP SNOW  /  head back to the blue trail"
+		elif sled.boosting:
+			status_label.text = "MUSH!"
+		elif sled.drifting:
+			status_label.text = "CARVING"

@@ -1,25 +1,35 @@
-# Dogsled Kart — Tuning Reference
+# Sled tuning
 
-All vehicle tuning constants live in `godot/scripts/vehicle/SledTuning.gd`.
-**Never scatter tuning numbers in other scripts** — always reference `SledTuning.*`.
+All movement constants live in `godot/scripts/vehicle/SledTuning.gd`.
 
-## Current Values
+| Setting | Value | Purpose |
+|---|---:|---|
+| ACCELERATION | 12 m/s? | Responsive launch without instant top speed |
+| MAX_SPEED | 25 m/s | 90 km/h normal cap |
+| REVERSE_SPEED | 6 m/s | Controlled recovery in reverse |
+| BRAKE_FORCE | 24 m/s? | Braking response |
+| DRAG | 3 m/s? | Coasting |
+| TURN_RATE | 1.25 rad/s | Full steering response |
+| STEER_RESPONSE | 6 /s | Keyboard steering smoothing |
+| GRIP | 7 /s | Normal momentum alignment |
+| DRIFT_GRIP | 1.8 /s | Sideways momentum while drifting |
+| DRIFT_TURN | 1.3 | Turn multiplier during drift |
+| OFFROAD_SPEED | 13 m/s | Deep-snow speed limit |
+| BOOST_SPEED | 36 m/s | 129.6 km/h boost cap |
+| BOOST_ACCEL | 22 m/s? | Boost acceleration |
+| BOOST_DRAIN | 38 /s | Approximately 2.6 seconds from full |
+| BOOST_RECHARGE | 13 /s | Recharge while not boosting |
+| GRAVITY | 22 m/s? | Hill contact and landings |
+| RECOVERY_PENALTY | 3 s | Added to current lap and race |
+| CAMERA_DISTANCE | 10.5 m | Chase distance |
+| CAMERA_HEIGHT | 5.5 m | Chase height |
 
-| Constant           | Value | Unit      | Notes                          |
-|--------------------|-------|-----------|--------------------------------|
-| ACCELERATION       | 20.0  | m/s²      | Forward push per second        |
-| MAX_SPEED          | 30.0  | m/s       | ~108 km/h display              |
-| BRAKE_FORCE        | 25.0  | m/s²      | Deceleration when braking      |
-| DRAG               | 5.0   | m/s²      | Passive coast deceleration     |
-| TURN_RATE          | 2.5   | rad/s     | At full speed                  |
-| MIN_SPEED_TO_TURN  | 1.5   | m/s       | Below this, steering ignored   |
-| BOOST_STRENGTH     | 40.0  | m/s²      | Phase 2+                       |
-| BOOST_DURATION     | 1.5   | s         | Phase 2+                       |
-| WALL_BOUNCE        | 0.3   | ratio     | Phase 2+                       |
-| OFFROAD_SLOWDOWN   | 0.6   | ratio     | Phase 2+                       |
+Speed display uses measured physical velocity, not requested speed. Steering reverses naturally when backing up. Drift changes grip rather than simply raising speed. Camera interpolation uses exponential smoothing.
 
-## How to Tune
-1. Open `SledTuning.gd`.
-2. Change the constant value.
-3. Run the game — changes take effect immediately (no reload needed for constants).
-4. Update this doc when committing tuning changes.
+When changing handling, run both the smoke suite and the three-lap driving test, then play manually. The bot validates traversability; it does not establish whether controls feel fun.
+
+## NPC teams
+
+Rivals inherit `SledController.gd`; they supply throttle, steering and boost inputs instead of reading the keyboard. `RivalController.gd` looks 10 m ahead for steering and 24 m ahead for corner braking. Boosts last 0.8 seconds and are allowed on straight sections, with 12-14 second intervals.
+
+`RaceManager.gd` creates Juniper, Kodiak and Mika with throttle targets of 0.82, 0.88 and 0.94 and lanes at -3.1, 0 and 3.1 m. Passing offsets stay within 3.8 m of the center. There is no rubber-banding. Run `tests/npc_race.gd` after changing these values; it validates both autonomous completion and a winnable player race.

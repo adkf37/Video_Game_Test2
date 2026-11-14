@@ -1,0 +1,104 @@
+extends "res://scripts/vehicle/SledController.gd"
+## Controls only: the shared controller handles all movement and snow physics.
+const LAP_TRACKER = preload("res://scripts/track/LapTracker.gd")
+var racer_name := "Rival"
+var team_color := Color.WHITE
+var grid_index := 0
+var lane := 0.0
+var cruise_throttle := 0.88
+var lap_tracker: Node
+var finished := false
+var boost_wait := 5.0
+var boost_left := 0.0
+var stuck_time := 0.0
+var recovery_count := 0
+
+func _ready() -> void:
+	is_player = false
+	super._ready()
+	lap_tracker = Node.new()
+	lap_tracker.set_script(LAP_TRACKER)
+	add_child(lap_tracker)
+	lap_tracker.setup(AlpineTrack.CHECKPOINT_COUNT)
+	lap_tracker.lap_completed.connect(_lap_completed)
+	var label := Label3D.new()
+	add_child(label)
+	label.position = Vector3(0, 3.3, 0)
+	label.text = racer_name
+	label.font_size = 40
+	label.pixel_size = 0.018
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.modulate = team_color.lightened(0.35)
+	label.outline_size = 10
+
+func reset_race() -> void:
+	finished = false
+	lap_tracker.setup(AlpineTrack.CHECKPOINT_COUNT)
+	boost_energy = 100.0
+	boost_wait = 5.0 + grid_index * 1.5
+	boost_left = 0.0
+	stuck_time = 0.0
+	recovery_count = 0
+	var frame: Transform3D = get_parent().get_node("Track").frame_at(-0.018)
+	frame.origin += frame.basis.x * lane
+	reset_to(frame)
+
+func can_drive() -> bool:
+	return not finished and race_manager.state in [race_manager.RaceState.RACING, race_manager.RaceState.FINISHED]
+
+func drive_controls(delta: float) -> Dictionary:
+	var goal_frame := track.frame_at(route_progress + 10.0 / track.total_length)
+	var target_lane := lane
+	# Give a team just ahead some room; keep passing moves inside the snow banks.
+	for other in get_tree().get_nodes_in_group("racers"):
+		if other == self:
+			continue
+		var local_offset: Vector3 = global_basis.inverse() * (other.global_position - global_position)
+		if local_offset.z < -1.0 and local_offset.z > -12.0 and absf(local_offset.x) < 2.8:
+			target_lane = clampf(lane + (-2.0 if local_offset.x >= 0 else 2.0), -3.8, 3.8)
+	var goal := goal_frame.origin + goal_frame.basis.x * target_lane
+	var direction := goal - global_position
+	direction.y = 0
+	var forward := -global_basis.z
+	forward.y = 0
+	var angle := forward.signed_angle_to(direction.normalized(), Vector3.UP)
+	var steer := clampf(-angle * 2.5, -1, 1)
+	var upcoming := track.frame_at(route_progress + 24.0 / track.total_length)
+	var bend := absf((-goal_frame.basis.z).signed_angle_to(-upcoming.basis.z, Vector3.UP))
+	var throttle := cruise_throttle
+	if bend > 0.35:
+		throttle *= 0.88
+	if absf(angle) > 0.4:
+		throttle *= 0.8
+	boost_wait -= delta
+	boost_left = maxf(0.0, boost_left - delta)
+	if boost_wait <= 0 and boost_energy > 60 and absf(angle) < 0.10 and bend < 0.15 and not offroad:
+		boost_left = 0.8
+		boost_wait = 12.0 + grid_index
+	# A rare missed sector or stall recovers to the last validated position,
+	# never skipping a checkpoint or teleporting forward to catch the player.
+	var expected := float(lap_tracker.next_checkpoint) / track.CHECKPOINT_COUNT
+	var beyond := fposmod(route_progress - expected, 1.0)
+	var missed := beyond > 0.055 and beyond < 0.5
+	stuck_time = stuck_time + delta if current_speed < 1.0 or missed or offroad else 0.0
+	if stuck_time > 3.0:
+		var progress := float(lap_tracker.last_checkpoint) / track.CHECKPOINT_COUNT + 0.008
+		if not lap_tracker.has_started:
+			progress = -0.018
+		var frame := track.frame_at(progress)
+		frame.origin += frame.basis.x * lane
+		reset_to(frame)
+		stuck_time = 0.0
+		recovery_count += 1
+	return {"throttle": throttle, "steer": steer, "drift": false,
+		"boost": boost_left > 0 and absf(angle) < 0.25}
+
+func accept_checkpoint(index: int) -> bool:
+	if not can_drive():
+		return false
+	return lap_tracker.checkpoint_hit(index)
+
+func _lap_completed(number: int) -> void:
+	if number >= race_manager.max_laps:
+		finished = true
+		race_manager.register_finish(self)

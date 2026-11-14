@@ -1,3 +1,5 @@
+> Historical design proposal. For the playable November 2026 rebuild, see README.md and IMPLEMENTATION_SUMMARY.md. Feature claims below do not describe the current shipped milestone.
+
 Dogsled Kart
 
 Lightweight 3D dogsled racing game (local, Windows) with arcade handling and Mario Kart–style vibes.
