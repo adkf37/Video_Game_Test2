@@ -7,6 +7,7 @@ func _initialize() -> void:
 func _run() -> void:
 	var state: Node = root.get_node("GameState")
 	state.practice_run = true
+	state.race_mode = 0
 	state.difficulty = 1
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--course="):

@@ -1,6 +1,6 @@
 class_name AlpineTrack
 extends Node3D
-## Three themed spline courses; road width follows the selected difficulty.
+## Four themed spline courses; road width follows the selected difficulty.
 const SAMPLES := 320
 var half_width := 8.0
 var theme := 0
@@ -31,11 +31,22 @@ func _ready() -> void:
 		snow = AlpineArt.material(Color("#f5d7e4"))
 		trail = AlpineArt.material(Color("#caa3c2"))
 		bank = AlpineArt.material(Color("#fff0cf"))
+	elif theme == 3:
+		snow = AlpineArt.material(Color("#9aa5ad"))
+		trail = AlpineArt.material(Color("#455665"))
+		bank = AlpineArt.material(Color("#b7a79a"))
+	for mat in [snow, trail, bank, wood, pine]:
+		AlpineArt.add_grain(mat)
 	rng.seed = 2048
 	_build_path()
 	_build_ribbon()
 	_build_scenery()
 	_build_start()
+	var life := Node3D.new()
+	life.name = "TrackLife"
+	life.set_script(preload("res://scripts/track/TrackLife.gd"))
+	add_child(life)
+	life.build(self, theme)
 	call_deferred("_apply_environment")
 
 func _build_path() -> void:
@@ -49,6 +60,8 @@ func _build_path() -> void:
 		anchors = [Vector3(0, 0, 75), Vector3(-45, 1, 72), Vector3(-92, 3, 45), Vector3(-108, 5, 2), Vector3(-88, 6, -43), Vector3(-42, 2, -61), Vector3(-2, 0, -48), Vector3(35, 1, -70), Vector3(82, 3, -62), Vector3(108, 5, -16), Vector3(91, 2, 28), Vector3(52, 0, 57)]
 	elif theme == 2:
 		anchors = [Vector3(0, 0, 80), Vector3(-50, 0, 80), Vector3(-88, 3, 48), Vector3(-83, 6, 2), Vector3(-105, 3, -36), Vector3(-75, 0, -78), Vector3(-22, 2, -82), Vector3(20, 5, -62), Vector3(70, 2, -82), Vector3(108, 0, -42), Vector3(88, 4, 0), Vector3(100, 3, 42), Vector3(55, 0, 77)]
+	elif theme == 3:
+		anchors = [Vector3(0, 0, 86), Vector3(-56, 1, 86), Vector3(-104, 3, 54), Vector3(-108, 7, 0), Vector3(-90, 5, -51), Vector3(-42, 2, -86), Vector3(6, 0, -83), Vector3(47, 3, -65), Vector3(101, 6, -52), Vector3(115, 4, -3), Vector3(83, 2, 40), Vector3(46, 0, 78)]
 	for i in range(SAMPLES):
 		var t := float(i) / SAMPLES * anchors.size()
 		var j := int(t)
@@ -58,6 +71,9 @@ func _build_path() -> void:
 		var c := anchors[(j + 1) % anchors.size()]
 		var d := anchors[(j + 2) % anchors.size()]
 		var point := 0.5 * ((2.0 * b) + (-a + c) * f + (2.0*a - 5.0*b + 4.0*c - d)*f*f + (-a + 3.0*b - 3.0*c + d)*f*f*f)
+		# Broad climbs and descents, with a level start/finish apron.
+		var phase := float(i) / SAMPLES * TAU
+		point.y = point.y * 1.85 + (1.0 - cos(phase * 2.0)) * 1.5
 		points.append(point)
 	lengths.append(0.0)
 	for i in range(SAMPLES):
@@ -98,9 +114,9 @@ func _vertex(index: int, offset: float, rise: float) -> Vector3:
 	return point + right * offset + Vector3.UP * rise
 
 func _build_ribbon() -> void:
-	# Wide snowy shoulders physically support recovery; the raised lip is forgiving.
-	var widths := [-35.0, -half_width - 7, -half_width - 2, -half_width, half_width, half_width + 2, half_width + 7, 35.0]
-	var heights := [-2.0, 0.4, 0.65, 0.0, 0.0, 0.65, 0.4, -2.0]
+	# The flat six-metre first cut gives space to save a slide; deeper terrain tapers away.
+	var widths := [-40.0, -half_width - 14, -half_width - 6, -half_width, half_width, half_width + 6, half_width + 14, 40.0]
+	var heights := [-3.2, -0.4, 0.1, 0.0, 0.0, 0.1, -0.4, -3.2]
 	var road_mesh := ArrayMesh.new()
 	for strip in range(widths.size() - 1):
 		var surface := SurfaceTool.new()
@@ -111,7 +127,9 @@ func _build_ribbon() -> void:
 			var c := _vertex(i + 1, widths[strip + 1], heights[strip + 1])
 			var d := _vertex(i, widths[strip + 1], heights[strip + 1])
 			for vertex: Vector3 in [a, b, c, a, c, d]:
+				surface.set_uv(Vector2(vertex.x, vertex.z) * 0.18)
 				surface.add_vertex(vertex)
+		surface.index()
 		surface.generate_normals()
 		surface.set_material(trail if strip == 3 else (bank if strip == 2 or strip == 4 else snow))
 		surface.commit(road_mesh)
@@ -130,6 +148,9 @@ func _build_ribbon() -> void:
 	shape.position.y = -4
 
 func _build_scenery() -> void:
+	if theme == 3:
+		CityDecor.build(self)
+		return
 	if theme > 0:
 		BiomeDecor.build(self, theme)
 		return
@@ -139,15 +160,15 @@ func _build_scenery() -> void:
 		var pos := frame.origin + frame.basis.x * rng.randf_range(17.0, 65.0) * side
 		if nearest(pos).distance < 14.0:
 			continue
-		pos.y = -2.0 if absf((pos - frame.origin).dot(frame.basis.x)) > 30 else frame.origin.y - 0.5
+		pos.y = ground_height(pos)
 		_tree(pos, rng.randf_range(0.7, 1.5))
 	for i in range(32):
 		var angle := TAU * i / 32.0
 		var pos := Vector3(cos(angle) * rng.randf_range(205, 290), -5, sin(angle) * rng.randf_range(200, 280))
 		var height := rng.randf_range(38, 95)
 		var rock := AlpineArt.material(Color("#7397ab").lerp(Color("#b6c8d8"), rng.randf()))
-		AlpineArt.cone(self, pos + Vector3.UP * height * 0.5, rng.randf_range(32, 56), height, rock)
-		AlpineArt.cone(self, pos + Vector3.UP * height * 0.81, height * 0.22, height * 0.4, snow)
+		AlpineArt.ellipsoid(self, pos, Vector3(rng.randf_range(65, 100), height * 2, rng.randf_range(65, 100)), rock)
+		AlpineArt.ellipsoid(self, pos + Vector3.UP * height * 0.7, Vector3(height * 0.48, height * 0.65, height * 0.48), snow)
 	for i in range(50):
 		var frame := frame_at(rng.randf())
 		var pos := frame.origin + frame.basis.x * rng.randf_range(12, 24) * (-1 if i % 2 == 0 else 1)
@@ -161,7 +182,7 @@ func _build_scenery() -> void:
 	for i in range(12):
 		var frame := frame_at(float(i) / 12.0 + 0.025)
 		for side: float in [-1.0, 1.0]:
-			var pos := frame.origin + frame.basis.x * 9.0 * side
+			var pos := frame.origin + frame.basis.x * (half_width + 0.6) * side
 			AlpineArt.cone(self, pos + Vector3.UP, 0.09, 2.0, wood, 0.09)
 			var flag := AlpineArt.box(self, pos + Vector3.UP * 1.65, Vector3(0.8, 0.4, 0.04), coral)
 			flag.rotation.y = frame.basis.get_euler().y
@@ -249,3 +270,21 @@ func _apply_environment() -> void:
 		world.environment.background_color = Color("#f5c4df")
 		world.environment.fog_light_color = Color("#e2bbd9")
 		world.environment.ambient_light_color = Color("#ddcbe4")
+	elif theme == 3:
+		world.environment.background_color = Color("#b9d4df")
+		world.environment.fog_light_color = Color("#acbdcb")
+		world.environment.ambient_light_color = Color("#c4d6e5")
+
+func ground_height(pos: Vector3) -> float:
+	var near_point := nearest(pos)
+	var distance: float = near_point.distance
+	if distance >= 40:
+		return -3.5
+	var y := frame_at(near_point.progress).origin.y
+	if distance <= half_width:
+		return y
+	if distance <= half_width + 6:
+		return y + inverse_lerp(half_width, half_width + 6, distance) * 0.1
+	if distance <= half_width + 14:
+		return y + lerpf(0.1, -0.4, inverse_lerp(half_width + 6, half_width + 14, distance))
+	return y + lerpf(-0.4, -3.2, inverse_lerp(half_width + 14, 40, distance))

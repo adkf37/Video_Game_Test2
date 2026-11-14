@@ -1,5 +1,7 @@
 extends CharacterBody3D
 var is_player := true
+var player_index := 0
+var offroad_cut := 0
 var current_speed := 0.0
 var steering := 0.0
 var boost_energy := 100.0
@@ -27,7 +29,7 @@ func _ready() -> void:
 		add_to_group("player")
 	collision_layer = 2
 	collision_mask = 3
-	floor_snap_length = 1.2
+	floor_snap_length = 1.8
 	floor_max_angle = deg_to_rad(55)
 	call_deferred("_connect_world")
 
@@ -51,9 +53,9 @@ func reset_to(frame: Transform3D) -> void:
 	hit_immunity = 0.0
 	bump_cooldowns.clear()
 	visual.clear_attack()
-	var camera := get_parent().get_node_or_null("ChaseCamera")
-	if camera and is_player:
-		camera.snap()
+	for camera in get_tree().get_nodes_in_group("race_cameras"):
+		if camera.target == self:
+			camera.snap()
 
 func _physics_process(delta: float) -> void:
 	if not track or not race_manager:
@@ -62,6 +64,7 @@ func _physics_process(delta: float) -> void:
 	route_progress = nearest.progress
 	route_distance = nearest.distance
 	offroad = route_distance > track.half_width
+	offroad_cut = 0 if not offroad else (1 if route_distance <= track.half_width + RaceCatalog.FIRST_CUT_WIDTH else 2)
 	var active := can_drive()
 	collision_layer = 2 if active else 0
 	whip_cooldown = maxf(0, whip_cooldown - delta)
@@ -87,8 +90,8 @@ func _physics_process(delta: float) -> void:
 		boost_energy = minf(100, boost_energy + SledTuning.BOOST_RECHARGE * delta)
 	var limit := SledTuning.BOOST_SPEED if boosting else SledTuning.MAX_SPEED
 	if offroad:
-		limit = RaceCatalog.OFFROAD_CAPS[GameState.difficulty]
-		current_speed = move_toward(current_speed, clampf(current_speed, -limit, limit), SledTuning.OFFROAD_BRAKE * delta)
+		limit = RaceCatalog.offroad_limit(route_distance, track.half_width, GameState.difficulty)
+		current_speed = move_toward(current_speed, clampf(current_speed, -limit, limit), (8.0 if offroad_cut == 1 else SledTuning.OFFROAD_BRAKE) * delta)
 	var acceleration := SledTuning.BOOST_ACCEL if boosting else SledTuning.ACCELERATION
 	if throttle > 0:
 		current_speed = move_toward(current_speed, limit * throttle, acceleration * delta)
@@ -197,9 +200,13 @@ func get_speed_kph() -> float:
 	return Vector2(get_real_velocity().x, get_real_velocity().z).length() * 3.6
 
 func can_drive() -> bool:
-	return race_manager.state == race_manager.RaceState.RACING
+	return race_manager.state == race_manager.RaceState.RACING and self not in race_manager.finish_order
+
+func input_prefix() -> String:
+	return ("p1_" if player_index == 0 else "p2_") if GameState.race_mode == 1 else ""
 
 func drive_controls(_delta: float) -> Dictionary:
-	return {"throttle": Input.get_axis("move_back", "move_forward"), "steer": Input.get_axis("turn_left", "turn_right"),
-		"drift": Input.is_action_pressed("drift"), "boost": Input.is_action_pressed("boost"),
-		"whip": Input.is_action_just_pressed("whip")}
+	var prefix := input_prefix()
+	return {"throttle": Input.get_axis(prefix + "move_back", prefix + "move_forward"), "steer": Input.get_axis(prefix + "turn_left", prefix + "turn_right"),
+		"drift": Input.is_action_pressed(prefix + "drift"), "boost": Input.is_action_pressed(prefix + "boost"),
+		"whip": Input.is_action_just_pressed(prefix + "whip")}

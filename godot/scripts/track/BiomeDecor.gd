@@ -18,7 +18,7 @@ static func build(track: Node3D, theme: int) -> void:
 		var pos: Vector3 = frame.origin + frame.basis.x * distance * (-1.0 if i % 2 == 0 else 1.0)
 		if track.nearest(pos).distance < track.half_width + 5:
 			continue
-		pos.y = frame.origin.y - 0.4 if distance < 28 else -2
+		pos.y = track.ground_height(pos)
 		var prop := Node3D.new()
 		track.add_child(prop)
 		prop.position = pos
@@ -42,8 +42,8 @@ static func build(track: Node3D, theme: int) -> void:
 				var swirl := TorusMesh.new()
 				swirl.inner_radius = 0.7
 				swirl.outer_radius = 1.3
-				swirl.rings = 12
-				swirl.ring_segments = 6
+				swirl.rings = 32
+				swirl.ring_segments = 12
 				var ring := AlpineArt.mesh(prop, swirl, Vector3(0, 6.5, 0.48), cream)
 				ring.rotation.x = PI / 2
 			elif i % 3 == 1:

@@ -2,6 +2,9 @@ extends Node
 signal race_finished(final_time: float)
 signal announcement(text: String)
 enum RaceState { MENU, COUNTDOWN, RACING, PAUSED, FINISHED }
+const RIVAL_SCRIPT = preload("res://scripts/ai/RivalController.gd")
+const SLED_SCENE = preload("res://scenes/vehicles/Sled.tscn")
+const LAP_SCRIPT = preload("res://scripts/track/LapTracker.gd")
 var state := RaceState.MENU
 var resume_state := RaceState.RACING
 var max_laps := 3
@@ -13,9 +16,13 @@ var countdown := 3.5
 var new_record := false
 var recovery_cooldown := 0.0
 var countdown_number := 4
-const RIVAL_SCRIPT = preload("res://scripts/ai/RivalController.gd")
-const SLED_SCENE = preload("res://scenes/vehicles/Sled.tscn")
 var rivals: Array[CharacterBody3D] = []
+var players: Array[CharacterBody3D] = []
+var player_trackers: Array[Node] = []
+var player_times := [0.0, 0.0]
+var player_lap_starts := [0.0, 0.0]
+var player_splits: Array = [[], []]
+var recovery_wait := [0.0, 0.0]
 var finish_order: Array[Node] = []
 var finish_times: Dictionary = {}
 var elapsed_time := 0.0
@@ -27,21 +34,34 @@ var player_finish_place := 0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	add_to_group("race")
+	players.append(sled)
+	player_trackers.append(lap_tracker)
 	lap_tracker.reset(-0.04)
 	lap_tracker.lap_completed.connect(_on_lap_completed)
 	call_deferred("_setup_grid")
 
 func _setup_grid() -> void:
+	if GameState.race_mode == 1:
+		var second: CharacterBody3D = SLED_SCENE.instantiate()
+		second.name = "PlayerTwo"
+		second.player_index = 1
+		get_parent().add_child(second)
+		players.append(second)
+		var tracker := Node.new()
+		tracker.set_script(LAP_SCRIPT)
+		add_child(tracker)
+		player_trackers.append(tracker)
+		tracker.lap_completed.connect(func(number: int): _human_lap(1, number))
 	var names := ["Juniper", "Kodiak", "Mika"]
 	var colors := [Color("#65bc87"), Color("#8f86d9"), Color("#e0b448")]
-	for i in range(3):
+	for i in range(4 - players.size()):
 		var rival: CharacterBody3D = SLED_SCENE.instantiate()
 		rival.set_script(RIVAL_SCRIPT)
 		rival.name = "Rival%d" % i
 		rival.racer_name = names[i]
 		rival.team_color = colors[i]
 		rival.grid_index = i
-		rival.lane = (i - 1) * track.half_width * 0.36
+		rival.lane = (i - (3 - players.size()) * 0.5) * track.half_width * 0.5
 		rival.cruise_throttle = RaceCatalog.NPC_PACE[GameState.difficulty] + (i - 1) * 0.025
 		rival.get_node("DogTeam").breed = (i + 1) % 4
 		rival.get_node("DogTeam").sled_style = (i + 1) % 4
@@ -52,13 +72,21 @@ func _setup_grid() -> void:
 	_place_at_start()
 
 func apply_customization() -> void:
-	sled.visual.breed = GameState.breed
-	sled.visual.sled_style = GameState.sled_style
-	sled.visual.rebuild()
+	for i in range(players.size()):
+		var visual: Node3D = players[i].visual
+		visual.breed = GameState.breed if i == 0 else GameState.breed2
+		visual.sled_style = GameState.sled_style if i == 0 else GameState.sled_style2
+		visual.team_color = Color("#ed8668") if i == 0 else Color("#5fcddd")
+		visual.musher_layer = 2 if i == 0 else 4
+		visual.rebuild()
 
 func _place_at_start() -> void:
-	sled.reset_to(track.frame_at(-0.04))
-	lap_tracker.reset(-0.04)
+	for i in range(players.size()):
+		var frame: Transform3D = track.frame_at(-0.04)
+		if players.size() == 2:
+			frame.origin += frame.basis.x * (-2.7 if i == 0 else 2.7)
+		players[i].reset_to(frame)
+		player_trackers[i].reset(-0.04)
 	for rival in rivals:
 		rival.reset_race()
 
@@ -75,41 +103,50 @@ func start() -> void:
 	lap_start = 0.0
 	current_lap = 0
 	lap_times.clear()
-	lap_tracker.reset(-0.04)
+	player_times = [0.0, 0.0]
+	player_lap_starts = [0.0, 0.0]
+	player_splits = [[], []]
+	recovery_wait = [0.0, 0.0]
 	new_record = false
 	recovery_cooldown = 0.0
-	sled.boost_energy = 100.0
+	for player in players:
+		player.boost_energy = 100.0
 	_place_at_start()
 
 func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("pause"):
 		if state == RaceState.PAUSED:
 			resume()
-		elif state == RaceState.RACING or state == RaceState.COUNTDOWN:
+		elif state in [RaceState.RACING, RaceState.COUNTDOWN]:
 			resume_state = state
 			state = RaceState.PAUSED
 			get_tree().paused = true
 	if Input.is_action_just_pressed("mute"):
 		GameState.muted = not GameState.muted
-		GameState.save()
+		if not GameState.practice_run:
+			GameState.save()
 	if state == RaceState.COUNTDOWN:
 		countdown -= delta
 		var number := ceili(countdown)
 		if number != countdown_number and number > 0:
 			countdown_number = number
 			get_parent().get_node("RaceAudio").cue(550.0, 0.12)
-		if countdown <= 0.0:
+		if countdown <= 0:
 			state = RaceState.RACING
 			announcement.emit("MUSH!")
 			get_parent().get_node("RaceAudio").cue(880.0, 0.3)
 	elif state == RaceState.RACING:
-		race_time += delta
 		elapsed_time += delta
-		recovery_cooldown = maxf(0.0, recovery_cooldown - delta)
-		if (Input.is_action_just_pressed("recover") or sled.position.y < -8.0) and recovery_cooldown <= 0.0:
-			recover()
-	elif state == RaceState.FINISHED and finish_order.size() < rivals.size() + 1:
-		# Rivals still on the course finish naturally while results are displayed.
+		for i in range(players.size()):
+			if players[i] in finish_order:
+				continue
+			player_times[i] += delta
+			recovery_wait[i] = maxf(0, recovery_wait[i] - delta)
+			if (Input.is_action_just_pressed(players[i].input_prefix() + "recover") or players[i].position.y < -8) and recovery_wait[i] <= 0:
+				recover(i)
+		race_time = player_times[0]
+		recovery_cooldown = recovery_wait[0]
+	elif state == RaceState.FINISHED and finish_order.size() < 4:
 		elapsed_time += delta
 
 func resume() -> void:
@@ -123,60 +160,90 @@ func menu() -> void:
 
 func _physics_process(_delta: float) -> void:
 	if state == RaceState.RACING:
-		lap_tracker.sample(track.nearest(sled.global_position).progress)
+		for i in range(players.size()):
+			if players[i] not in finish_order:
+				player_trackers[i].sample(track.nearest(players[i].global_position).progress)
 	if state in [RaceState.RACING, RaceState.FINISHED]:
 		for rival in rivals:
 			if not rival.finished:
 				rival.lap_tracker.sample(track.nearest(rival.global_position).progress)
 
 func _on_lap_completed(number: int) -> void:
-	lap_times.append(race_time - lap_start)
-	lap_start = race_time
-	current_lap = number
-	get_parent().get_node("RaceAudio").cue(1100.0, 0.25)
-	if current_lap >= max_laps:
-		register_finish(sled)
-		player_finish_place = finish_order.find(sled) + 1
-		state = RaceState.FINISHED
-		new_record = GameState.record_run(race_time, lap_times.min())
-		race_finished.emit(race_time)
-	else:
-		announcement.emit("FINAL LAP" if current_lap == max_laps - 1 else "LAP %d  /  %s" % [current_lap, GameState.time_text(lap_times.back())])
+	_human_lap(0, number)
 
-func recover() -> void:
-	if state != RaceState.RACING:
+func _human_lap(index: int, number: int) -> void:
+	player_splits[index].append(player_times[index] - player_lap_starts[index])
+	player_lap_starts[index] = player_times[index]
+	if index == 0:
+		current_lap = number
+		lap_start = player_lap_starts[0]
+		lap_times.assign(player_splits[0])
+	get_parent().get_node("RaceAudio").cue(1100.0, 0.25)
+	if number >= max_laps:
+		register_finish(players[index])
+		if index == 0:
+			player_finish_place = finish_order.find(sled) + 1
+		var all_done := true
+		for player in players:
+			if player not in finish_order:
+				all_done = false
+		if all_done:
+			state = RaceState.FINISHED
+			new_record = GameState.record_run(player_times[0], lap_times.min()) if players.size() == 1 else false
+			race_finished.emit(player_times[0])
+		else:
+			announcement.emit("PLAYER %d FINISHED!  OTHER PLAYER STILL RACING" % (index + 1))
+	else:
+		announcement.emit(("P%d  /  " % (index + 1) if players.size() == 2 else "") + ("FINAL LAP" if number == max_laps - 1 else "LAP %d COMPLETE" % number))
+
+func recover(index: int = 0) -> void:
+	if state != RaceState.RACING or players[index] in finish_order:
 		return
-	var progress: float = track.nearest(sled.global_position).progress
-	sled.reset_to(track.frame_at(progress))
-	lap_tracker.rebase(progress)
-	race_time += SledTuning.RECOVERY_PENALTY
-	recovery_cooldown = 2.0
-	announcement.emit("BACK ON TRAIL   +3s")
+	var player := players[index]
+	var progress: float = track.nearest(player.global_position).progress
+	var frame: Transform3D = track.frame_at(progress)
+	# Offset a recovery if another active racer is occupying the center line.
+	for other in get_tree().get_nodes_in_group("racers"):
+		if other != player and other.can_drive() and other.global_position.distance_to(frame.origin) < 4:
+			frame.origin += frame.basis.x * (3.0 if index == 0 else -3.0)
+			break
+	player.reset_to(frame)
+	player_trackers[index].rebase(progress)
+	player_times[index] += SledTuning.RECOVERY_PENALTY
+	recovery_wait[index] = 2.0
+	race_time = player_times[0]
+	recovery_cooldown = recovery_wait[0]
+	announcement.emit(("P%d  /  " % (index + 1) if players.size() == 2 else "") + "BACK ON TRAIL   +3s")
+
+func tracker_for(racer: Node) -> Node:
+	var index := players.find(racer)
+	return player_trackers[index] if index >= 0 else racer.lap_tracker
 
 func register_finish(racer: Node) -> void:
-	if racer in finish_order or not (racer == sled or racer in rivals):
+	if racer in finish_order or not (racer in players or racer in rivals):
 		return
-	var tracker: Node = lap_tracker if racer == sled else racer.lap_tracker
-	if tracker.current_lap < max_laps:
+	if tracker_for(racer).current_lap < max_laps:
 		return
 	finish_order.append(racer)
 	finish_times[racer] = elapsed_time
 
 func race_progress(racer: Node) -> float:
-	var tracker: Node = lap_tracker if racer == sled else racer.lap_tracker
-	return tracker.race_progress()
+	return tracker_for(racer).race_progress()
 
 func standings() -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
-	var racers: Array[Node] = [sled]
+	var racers: Array[Node] = []
+	racers.append_array(players)
 	racers.append_array(rivals)
 	for racer in racers:
-		var is_player := racer == sled
-		rows.append({"racer": racer, "name": "You" if is_player else racer.racer_name,
-			"color": Color("#ed8668") if is_player else racer.team_color,
-			"player": is_player, "finished": racer in finish_order,
+		var index := players.find(racer)
+		var human := index >= 0
+		var label: String = ("You" if players.size() == 1 else "Player %d" % (index + 1)) if human else racer.racer_name
+		rows.append({"racer": racer, "name": label,
+			"color": (Color("#ed8668") if index == 0 else Color("#5fcddd")) if human else racer.team_color,
+			"player": human, "player_index": index, "finished": racer in finish_order,
 			"order": finish_order.find(racer), "time": finish_times.get(racer, 0.0),
-			"progress": race_progress(racer), "grid": 3 if is_player else racer.grid_index})
+			"progress": race_progress(racer), "grid": 2 + index if human else racer.grid_index})
 	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if a.finished != b.finished:
 			return a.finished
@@ -187,10 +254,10 @@ func standings() -> Array[Dictionary]:
 		return a.grid < b.grid)
 	return rows
 
-func player_position() -> int:
+func player_position(index: int = 0) -> int:
 	var rows := standings()
 	for i in range(rows.size()):
-		if rows[i].player:
+		if rows[i].player_index == index:
 			return i + 1
 	return 4
 

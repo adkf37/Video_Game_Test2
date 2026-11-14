@@ -49,6 +49,9 @@ static func build(parent: Node3D, style: int, accent: Material) -> void:
 			for side: float in [-1, 1]:
 				AlpineArt.ellipsoid(parent, Vector3(side * 0.8, 0.6, -1.3), Vector3(0.35, 0.35, 0.35), cream)
 		3:
+			# Forward driving platform keeps the musher in front of the throne.
+			AlpineArt.box(parent, Vector3(0, 0.45, -1.55), Vector3(1.4, 0.15, 0.8), gold)
+			AlpineArt.beam(parent, Vector3(-0.65, 1.5, -1.9), Vector3(0.65, 1.5, -1.9), 0.1, gold)
 			var velvet := AlpineArt.material(Color("#752945"))
 			AlpineArt.box(parent, Vector3(0, 0.82, -0.35), Vector3(1.6, 0.65, 1.8), gold)
 			AlpineArt.box(parent, Vector3(0, 1.2, -0.35), Vector3(1.25, 0.22, 1.5), velvet)

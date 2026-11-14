@@ -24,6 +24,9 @@ func _draw() -> void:
 	draw_circle(_map(track.points[0]), 4, Color("#f8f1df"))
 	for rival in manager.rivals:
 		draw_circle(_map(rival.global_position), 4.5, rival.team_color)
+	for player in manager.players:
+		if player != sled:
+			draw_circle(_map(player.global_position), 5, Color("#5fcddd"))
 	var p := _map(sled.global_position)
 	var facing := -sled.global_basis.z
 	var f := Vector2(facing.x, facing.z)

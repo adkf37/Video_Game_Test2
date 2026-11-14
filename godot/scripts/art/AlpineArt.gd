@@ -22,8 +22,8 @@ static func box(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> M
 
 static func ellipsoid(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:
 	var shape := SphereMesh.new()
-	shape.radial_segments = 10
-	shape.rings = 5
+	shape.radial_segments = 24
+	shape.rings = 12
 	shape.radius = 0.5
 	shape.height = 1.0
 	var item := mesh(parent, shape, pos, mat)
@@ -35,7 +35,7 @@ static func cone(parent: Node3D, pos: Vector3, radius: float, height: float, mat
 	shape.top_radius = top
 	shape.bottom_radius = radius
 	shape.height = height
-	shape.radial_segments = 7
+	shape.radial_segments = 20
 	return mesh(parent, shape, pos, mat)
 
 static func beam(parent: Node3D, from: Vector3, to: Vector3, thickness: float, mat: Material) -> MeshInstance3D:
@@ -45,3 +45,14 @@ static func beam(parent: Node3D, from: Vector3, to: Vector3, thickness: float, m
 	# Endpoints are local to the parent, including already-rotated moving sleds.
 	item.basis = Basis.looking_at(direction, up)
 	return item
+
+static func add_grain(mat: StandardMaterial3D) -> void:
+	var picture := Image.create(64, 64, false, Image.FORMAT_RGB8)
+	var random := RandomNumberGenerator.new()
+	random.seed = 1234
+	for y in range(64):
+		for x in range(64):
+			var shade := random.randf_range(0.87, 1.0)
+			picture.set_pixel(x, y, Color(shade, shade, shade))
+	picture.generate_mipmaps()
+	mat.albedo_texture = ImageTexture.create_from_image(picture)

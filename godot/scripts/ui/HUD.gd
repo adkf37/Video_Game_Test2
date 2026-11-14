@@ -7,6 +7,8 @@ const CORAL := Color("#ed8668")
 var root: Control
 var menu_panel: Control
 var race_panel: Control
+var split_panel: Control
+var split_readouts: Array[Dictionary] = []
 var pause_panel: Control
 var results_panel: Control
 var countdown_label: Label
@@ -43,6 +45,7 @@ func _ready() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_build_menu()
 	_build_race()
+	_build_split()
 	_build_pause()
 	_build_results()
 	manager.announcement.connect(_announce)
@@ -56,6 +59,9 @@ func _label(parent: Node, text: String, pos: Vector2, font_size: int, color: Col
 	label.text = text
 	label.add_theme_font_size_override("font_size", font_size)
 	label.add_theme_color_override("font_color", color)
+	if color == INK:
+		label.add_theme_color_override("font_outline_color", Color(1, 0.98, 0.91, 0.9))
+		label.add_theme_constant_override("outline_size", 4)
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return label
 
@@ -106,28 +112,35 @@ func _build_menu() -> void:
 	menu_panel = _group()
 	_panel(menu_panel, Vector2(30, 24), Vector2(422, 672), Color(0.055, 0.15, 0.19, 0.95))
 	_label(menu_panel, "THE GREAT DOGSLED TOUR", Vector2(65, 39), 13, CORAL)
-	_label(menu_panel, "DOGSLED KART", Vector2(62, 86), 36, CREAM, Vector2(370, 65))
-	_label(menu_panel, "Build your team. Take on the pack.", Vector2(65, 145), 16, MUTED)
-	_selector("TRACK", "course", RaceCatalog.COURSES, 211)
-	_selector("DIFFICULTY", "difficulty", RaceCatalog.DIFFICULTIES, 292)
+	_label(menu_panel, "DOGSLED KART", Vector2(62, 78), 36, CREAM, Vector2(370, 65))
+	_label(menu_panel, "Build your team. Share the trail.", Vector2(65, 132), 16, MUTED)
+	_selector("RACE MODE", "race_mode", RaceCatalog.MODES, 187)
+	_selector("TRACK", "course", RaceCatalog.COURSES, 252)
+	_selector("DIFFICULTY", "difficulty", RaceCatalog.DIFFICULTIES, 317)
 	var breeds: Array[String] = []
 	for i in range(4):
 		breeds.append("%s  /  %d dogs" % [RaceCatalog.BREEDS[i], RaceCatalog.TEAM_COUNTS[i]])
-	_selector("DOG TEAM", "breed", breeds, 373)
-	_selector("SLED", "sled_style", RaceCatalog.SLEDS, 454)
-	start_button = _button(menu_panel, "Race the pack    >", Vector2(76, 535), manager.start)
-	_label(menu_panel, "WASD drive   SHIFT drift   SPACE boost\nE whip   R recover   ESC pause", Vector2(65, 602), 14, MUTED, Vector2(365, 60))
-	best_label = _label(menu_panel, "", Vector2(65, 661), 12, CORAL, Vector2(360, 25))
+	_selector("PLAYER 1 DOGS", "breed", breeds, 382)
+	_selector("PLAYER 1 SLED", "sled_style", RaceCatalog.SLEDS, 447)
+	start_button = _button(menu_panel, "Race together    >" if GameState.race_mode == 1 else "Race the pack    >", Vector2(76, 511), manager.start)
+	_label(menu_panel, "P1  WASD steer / F boost / SHIFT drift\nE whip / R recover / C change view\nESC pause / M sound", Vector2(65, 579), 14, MUTED, Vector2(365, 75))
+	best_label = _label(menu_panel, "", Vector2(65, 663), 12, CORAL, Vector2(360, 25))
 	_label(menu_panel, RaceCatalog.COURSES[GameState.course].to_upper(), Vector2(870, 44), 21, INK, Vector2(370, 40)).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_label(menu_panel, "4 TEAMS / 3 LAPS / " + RaceCatalog.DIFFICULTIES[GameState.difficulty].to_upper(), Vector2(870, 80), 13, INK, Vector2(370, 40)).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	if GameState.race_mode == 1:
+		_panel(menu_panel, Vector2(840, 165), Vector2(410, 365), Color(0.055, 0.15, 0.19, 0.95))
+		_label(menu_panel, "PLAYER 2  /  BOTTOM SCREEN", Vector2(865, 185), 17, Color("#5fcddd"))
+		_selector("DOG TEAM", "breed2", breeds, 254, 865)
+		_selector("SLED", "sled_style2", RaceCatalog.SLEDS, 329, 865)
+		_label(menu_panel, "ARROWS steer / SLASH boost\nPERIOD drift / COMMA whip\nBACKSPACE recover / ENTER view\nSpace is unassigned. ESC pauses both.", Vector2(865, 393), 15, MUTED, Vector2(365, 115))
 	_button(menu_panel, "Quit", Vector2(900, 620), func(): get_tree().quit(), false)
 
-func _selector(caption: String, key: String, choices: Array, y: float) -> void:
-	_label(menu_panel, caption, Vector2(65, y - 32), 12, CORAL, Vector2(360, 27))
+func _selector(caption: String, key: String, choices: Array, y: float, x: float = 65) -> void:
+	_label(menu_panel, caption, Vector2(x, y - 23), 12, CORAL, Vector2(360, 27))
 	var option := OptionButton.new()
 	menu_panel.add_child(option)
-	option.position = Vector2(65, y)
-	option.size = Vector2(352, 43)
+	option.position = Vector2(x, y)
+	option.size = Vector2(352, 39)
 	option.add_theme_font_size_override("font_size", 18)
 	option.add_theme_color_override("font_color", CREAM)
 	option.add_theme_stylebox_override("normal", _style(Color("#2a505c"), 7))
@@ -138,7 +151,7 @@ func _selector(caption: String, key: String, choices: Array, y: float) -> void:
 	option.select(GameState.get(key))
 	option.item_selected.connect(func(index: int):
 		GameState.set_option(key, index)
-		if key in ["course", "difficulty"]:
+		if key in ["course", "difficulty", "race_mode"]:
 			get_tree().reload_current_scene()
 		else:
 			manager.apply_customization())
@@ -181,7 +194,7 @@ func _build_race() -> void:
 	race_panel.add_child(map)
 	map.position = Vector2(1020, 490)
 	map.size = Vector2(230, 198)
-	_label(race_panel, "SHIFT drift   SPACE boost   E whip   R recover   ESC pause", Vector2(365, 665), 13, INK)
+	_label(race_panel, "SHIFT drift   F boost   E whip   R recover   C view   ESC pause", Vector2(365, 665), 13, INK)
 	countdown_label = _label(race_panel, "", Vector2(300, 230), 100, INK, Vector2(680, 160))
 	countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast = _label(race_panel, "", Vector2(280, 177), 32, INK, Vector2(720, 60))
@@ -229,6 +242,12 @@ func _finished(total: float) -> void:
 	result_laps.text += "\nBEST  " + (GameState.time_text(GameState.best_time) if GameState.best_time > 0 else "--:--.--")
 	if GameState.save_error:
 		result_laps.text += "  (save failed)"
+	if GameState.race_mode == 1:
+		record_label.text = "LOCAL DUEL COMPLETE"
+		result_heading.text = "Player %d wins the duel!" % (1 if manager.finish_order.find(manager.players[0]) < manager.finish_order.find(manager.players[1]) else 2)
+		result_time.text = "P1  " + GameState.time_text(manager.player_times[0])
+		result_time.add_theme_font_size_override("font_size", 38)
+		result_laps.text = "P2 PERSONAL TIME  " + GameState.time_text(manager.player_times[1]) + "\nSolo records are kept separate."
 	_refresh_standings()
 
 func _refresh_standings() -> void:
@@ -240,7 +259,7 @@ func _refresh_standings() -> void:
 		var name_text: String = row.name.to_upper() + ("  <" if row.player else "")
 		leaderboard.text += "%d   %s%s\n" % [i + 1, name_text, "  FIN" if row.finished else ""]
 		result_details.text += "%d   %-10s  %s\n" % [i + 1, row.name.to_upper(), GameState.time_text(row.time) if row.finished else "Racing..."]
-		if row.player:
+		if row.player_index == 0:
 			position_label.text = "%d / 4" % (i + 1)
 
 func _process(delta: float) -> void:
@@ -251,7 +270,11 @@ func _process(delta: float) -> void:
 	menu_panel.visible = manager.state == manager.RaceState.MENU
 	pause_panel.visible = manager.state == manager.RaceState.PAUSED
 	results_panel.visible = manager.state == manager.RaceState.FINISHED
-	race_panel.visible = not menu_panel.visible and not results_panel.visible and not pause_panel.visible
+	var racing_visible := not menu_panel.visible and not results_panel.visible and not pause_panel.visible
+	race_panel.visible = racing_visible and GameState.race_mode == 0
+	split_panel.visible = racing_visible and GameState.race_mode == 1
+	if split_panel.visible:
+		_update_split()
 	if manager.state != last_state:
 		last_state = manager.state
 		if manager.state != manager.RaceState.RACING:
@@ -266,7 +289,7 @@ func _process(delta: float) -> void:
 			var focused := root.get_viewport().gui_get_focus_owner()
 			if focused:
 				focused.release_focus()
-	best_label.text = "BEST  " + GameState.time_text(GameState.best_time) if GameState.best_time > 0 else "Your first trail record awaits."
+	best_label.text = "LOCAL DUEL / independent teams and cameras" if GameState.race_mode == 1 else ("BEST  " + GameState.time_text(GameState.best_time) if GameState.best_time > 0 else "Your first trail record awaits.")
 	timer_label.text = GameState.time_text(manager.race_time)
 	lap_label.text = "LAP  %d / 3" % mini(manager.current_lap + 1, 3)
 	speed_label.text = "%d" % roundi(sled.get_speed_kph())
@@ -284,8 +307,57 @@ func _process(delta: float) -> void:
 		if forward.dot(route_forward) < -0.3 and sled.get_speed_kph() > 5:
 			status_label.text = "WRONG WAY  /  turn around"
 		elif sled.offroad:
-			status_label.text = "OFF TRAIL  /  heavy slowdown"
+			status_label.text = "FIRST CUT  /  light slowdown" if sled.offroad_cut == 1 else "SECOND CUT  /  deep slowdown"
 		elif sled.boosting:
 			status_label.text = "MUSH!"
 		elif sled.drifting:
 			status_label.text = "CARVING"
+
+func _build_split() -> void:
+	split_panel = _group()
+	var divider := ColorRect.new()
+	split_panel.add_child(divider)
+	divider.position = Vector2(0, 358)
+	divider.size = Vector2(1280, 4)
+	divider.color = INK
+	divider.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for i in range(2):
+		var y := i * 360.0
+		var color := CORAL if i == 0 else Color("#5fcddd")
+		_panel(split_panel, Vector2(18, y + 14), Vector2(240, 90), Color(0.055, 0.15, 0.19, 0.88))
+		_label(split_panel, "PLAYER %d" % (i + 1), Vector2(35, y + 20), 14, color)
+		var lap := _label(split_panel, "", Vector2(35, y + 47), 25, CREAM, Vector2(215, 40))
+		_panel(split_panel, Vector2(1040, y + 14), Vector2(222, 90), Color(0.055, 0.15, 0.19, 0.88))
+		var time := _label(split_panel, "", Vector2(1057, y + 25), 27, CREAM, Vector2(205, 40))
+		var view := _label(split_panel, "", Vector2(1057, y + 66), 13, color, Vector2(205, 30))
+		_panel(split_panel, Vector2(18, y + 271), Vector2(270, 73), Color(0.055, 0.15, 0.19, 0.88))
+		var speed := _label(split_panel, "", Vector2(35, y + 279), 23, CREAM, Vector2(250, 34))
+		var boost := ProgressBar.new()
+		split_panel.add_child(boost)
+		boost.position = Vector2(35, y + 320)
+		boost.size = Vector2(235, 9)
+		boost.show_percentage = false
+		boost.add_theme_stylebox_override("fill", _style(color, 3))
+		var status := _label(split_panel, "", Vector2(320, y + 291), 16, INK, Vector2(620, 28))
+		status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var controls := "WASD / F boost / SHIFT drift / E whip / R recover / C view" if i == 0 else "ARROWS / SLASH boost / PERIOD drift / COMMA whip / BACKSPACE recover / ENTER view"
+		_label(split_panel, controls, Vector2(320, y + 327), 12, INK, Vector2(930, 25))
+		var message := _label(split_panel, "", Vector2(290, y + 113), 52, INK, Vector2(700, 100))
+		message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		split_readouts.append({"lap": lap, "time": time, "view": view, "speed": speed, "boost": boost, "status": status, "message": message})
+
+func _update_split() -> void:
+	for i in range(manager.players.size()):
+		var player: Node = manager.players[i]
+		var fields := split_readouts[i]
+		var done: bool = player in manager.finish_order
+		fields.lap.text = "%d / 4    LAP %d / 3" % [manager.player_position(i), mini(manager.player_trackers[i].current_lap + 1, 3)]
+		fields.time.text = GameState.time_text(manager.player_times[i])
+		fields.view.text = "MUSHER VIEW" if GameState.camera_modes[i] == 1 else "CHASE VIEW"
+		fields.speed.text = "%d KM/H    MUSH" % roundi(player.get_speed_kph())
+		fields.boost.value = player.boost_energy
+		fields.status.text = ("WHIP READY" if player.whip_cooldown <= 0 else "WHIP %.1fs" % player.whip_cooldown)
+		if player.offroad:
+			fields.status.text += "  /  " + ("FIRST CUT" if player.offroad_cut == 1 else "SECOND CUT")
+		fields.message.add_theme_font_size_override("font_size", 25 if done else 72)
+		fields.message.text = "FINISHED / Other player still racing" if done else (str(clampi(ceili(manager.countdown), 1, 3)) if manager.state == manager.RaceState.COUNTDOWN else "")

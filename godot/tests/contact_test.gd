@@ -16,6 +16,7 @@ func frames(n: int) -> void:
 func _run() -> void:
 	var state: Node = root.get_node("GameState")
 	state.practice_run = true
+	state.race_mode = 0
 	state.course = 0
 	state.difficulty = 1
 	var scene: Node3D = load("res://scenes/main/Main.tscn").instantiate()

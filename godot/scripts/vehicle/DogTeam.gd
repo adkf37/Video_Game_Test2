@@ -1,6 +1,8 @@
 extends Node3D
 ## Breed-sized teams, four sled styles, articulated running and a visible whip sweep.
 @export var team_color := Color("#e7684c")
+var musher_layer := 1
+var musher: Node3D
 var breed := 0
 var sled_style := 0
 var whip_root: Node3D
@@ -45,16 +47,23 @@ func rebuild() -> void:
 	add_child(whip_root)
 	whip_root.visible = false
 	whip_timer = 0
+	musher = Node3D.new()
+	musher.name = "Musher"
+	add_child(musher)
+	musher.position.z = -2.5 if sled_style == 3 else 0.0
 	# A bundled-up musher gives the dog team a clear sense of scale.
 	for side: float in [-1.0, 1.0]:
-		AlpineArt.box(self, Vector3(side * 0.24, 0.75, 1.15), Vector3(0.23, 0.85, 0.28), dark)
-	AlpineArt.ellipsoid(self, Vector3(0, 1.5, 1.1), Vector3(0.95, 1.1, 0.65), coral)
-	AlpineArt.ellipsoid(self, Vector3(0, 2.15, 1.0), Vector3(0.66, 0.66, 0.66), white)
-	AlpineArt.ellipsoid(self, Vector3(0, 2.35, 1.06), Vector3(0.7, 0.45, 0.7), dark)
-	AlpineArt.ellipsoid(self, Vector3(0, 2.62, 1.06), Vector3.ONE * 0.2, coral)
+		AlpineArt.box(musher, Vector3(side * 0.24, 0.75, 1.15), Vector3(0.23, 0.85, 0.28), dark)
+	AlpineArt.ellipsoid(musher, Vector3(0, 1.5, 1.1), Vector3(0.95, 1.1, 0.65), coral)
+	AlpineArt.ellipsoid(musher, Vector3(0, 2.15, 1.0), Vector3(0.66, 0.66, 0.66), white)
+	AlpineArt.ellipsoid(musher, Vector3(0, 2.35, 1.06), Vector3(0.7, 0.45, 0.7), dark)
+	AlpineArt.ellipsoid(musher, Vector3(0, 2.62, 1.06), Vector3.ONE * 0.2, coral)
 	for side: float in [-1.0, 1.0]:
-		AlpineArt.beam(self, Vector3(side * 0.4, 1.75, 1.1), Vector3(side * 0.6, 1.6, 0.8), 0.22, coral)
-	AlpineArt.box(self, Vector3(0, 1.96, 1.05), Vector3(0.67, 0.15, 0.68), AlpineArt.material(Color("#efc66c")))
+		AlpineArt.beam(musher, Vector3(side * 0.4, 1.75, 1.1), Vector3(side * 0.6, 1.6, 0.8), 0.22, coral)
+	AlpineArt.box(musher, Vector3(0, 1.96, 1.05), Vector3(0.67, 0.15, 0.68), AlpineArt.material(Color("#efc66c")))
+	for item in musher.get_children():
+		if item is MeshInstance3D:
+			item.layers = musher_layer
 	spray = CPUParticles3D.new()
 	add_child(spray)
 	spray.position = Vector3(0, 0.25, 1.5)
@@ -102,11 +111,12 @@ func _make_dog(pos: Vector3, index: int) -> void:
 		else:
 			AlpineArt.cone(dog, Vector3(side * 0.22, 1.6, -0.59), 0.2 if breed != 0 else 0.17, 0.7 if breed != 0 else 0.43, fur)
 		AlpineArt.ellipsoid(dog, Vector3(side * 0.23, 1.25, -0.88), Vector3(0.11, 0.13, 0.07), nose)
+		AlpineArt.ellipsoid(dog, Vector3(side * 0.23, 1.28, -0.918), Vector3.ONE * 0.035, white)
 		for z: float in [-0.42, 0.43]:
 			var pivot := Node3D.new()
 			dog.add_child(pivot)
 			pivot.position = Vector3(side * 0.25, 0.72, z)
-			AlpineArt.box(pivot, Vector3(0, -0.25, 0), Vector3(0.16, 0.52, 0.18), white)
+			AlpineArt.ellipsoid(pivot, Vector3(0, -0.25, 0), Vector3(0.19, 0.56, 0.22), white)
 			AlpineArt.ellipsoid(pivot, Vector3(0, -0.49, -0.06), Vector3(0.23, 0.17, 0.31), white)
 			legs.append(pivot)
 	AlpineArt.box(dog, Vector3(0, 1.18, -0.2), Vector3(0.72, 0.1, 0.17), coral)
@@ -155,3 +165,6 @@ func show_whip(side: float) -> void:
 		AlpineArt.beam(whip_root, previous, point, 0.06, mat)
 		previous = point
 	whip_root.visible = true
+
+func musher_eye() -> Vector3:
+	return Vector3(0, 2.27, -1.7 if sled_style == 3 else 0.8)

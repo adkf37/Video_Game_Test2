@@ -12,6 +12,7 @@ func capture(filename: String) -> void:
 func _run() -> void:
 	var state: Node = root.get_node("GameState")
 	state.practice_run = true
+	state.race_mode = 0
 	state.difficulty = 1
 	var choices := [[0, 0, 0, "basecamp.png"], [1, 2, 1, "jungle-mastiffs-racer.png"], [2, 3, 2, "candy-chihuahuas-chocolate.png"], [2, 1, 3, "corgis-throne.png"]]
 	for choice in choices:

@@ -16,6 +16,7 @@ func frames(n: int) -> void:
 func _run() -> void:
 	var state: Node = root.get_node("GameState")
 	state.practice_run = true
+	state.race_mode = 0
 	state.course = 0
 	state.difficulty = 1
 	var tracker: Node = load("res://scripts/track/LapTracker.gd").new()
@@ -92,7 +93,15 @@ func _run() -> void:
 	Input.action_press("move_forward")
 	Input.action_press("boost")
 	await frames(45)
-	check(sled.offroad and not sled.boosting and sled.current_speed <= 5.0, "off-track penalty rapidly slows the sled and disables boost")
+	check(sled.offroad and not sled.boosting and sled.current_speed > 15.0 and sled.current_speed < 24.0, "first cut preserves momentum while disabling boost")
+	var deep_frame := track.frame_at(0.35)
+	deep_frame.origin += deep_frame.basis.x * (track.half_width + 18)
+	deep_frame.origin.y = track.ground_height(deep_frame.origin)
+	sled.reset_to(deep_frame)
+	sled.current_speed = 25
+	sled.drive_velocity = -sled.global_basis.z * 25
+	await frames(60)
+	check(sled.offroad_cut == 2 and sled.current_speed <= 10 and not sled.boosting, "deep second cut imposes a stronger physical slowdown")
 	Input.action_release("boost")
 	Input.action_release("move_forward")
 	var before: float = track.nearest(sled.position).progress
