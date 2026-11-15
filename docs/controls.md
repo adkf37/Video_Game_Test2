@@ -1,25 +1,28 @@
 # Controls
 
-| Action | Keyboard | Gamepad |
+Choose **Solo + 3 rivals** or **2 players + 2 rivals** in the garage. Local two-player mode uses a shared keyboard and top/bottom split-screen. Each player chooses their own dogs and sled.
+
+| Action | Player 1 / solo | Player 2 |
 |---|---|---|
-| Accelerate | W / Up | RT |
-| Brake / reverse | S / Down | LT |
-| Turn | A / D or Left / Right | Left stick |
-| Drift | Hold Shift while steering | LB |
-| Boost | Space while accelerating | A |
-| Whip rival sled | E | X |
-| Recover | R | Y |
-| Pause / resume | Esc | Start |
-| Mute | M | Keyboard only |
+| Accelerate / brake / steer | W / S / A / D | Arrow keys |
+| Boost | F | Slash (/) |
+| Drift | Shift | Period (.) |
+| Whip | E | Comma (,) |
+| Recover (+3 seconds) | R | Backspace |
+| Chase / musher view | C | Enter |
+| Pause both players | Esc | Esc |
+| Sound | M | M |
 
-Select track, difficulty, dog breed and sled in basecamp with the mouse or keyboard.
+Space is unassigned to racing controls. Solo mode also accepts arrow steering. The separate controls in two-player mode keep each player's hands on their side of the keyboard. Actual simultaneous-key capacity depends on the keyboard's hardware.
 
-Boost only works on the trail. Release Space to recharge; after running empty, release and press again. Drift preserves sideways momentum, so enter corners early and release to regain grip.
+Gamepads use left stick steering, RT throttle, LT brake, A boost, LB drift, X whip, Y recovery, RB camera and Start pause. Controller 1 belongs to Player 1 and controller 2 to Player 2. Physical gamepad validation remains outstanding.
 
-Whips hit a nearby active sled beside you within 6 m, pushing it outward. The cooldown is 3.5 seconds; a hit grants 0.8 seconds of protection. The HUD shows readiness. Sled contact also causes a physical bounce.
+Boost only works on the trail. Releasing boost recharges it; after running empty, release and press again. Drift preserves sideways momentum, so enter corners early and release to regain grip.
 
-The first forward finish-line crossing starts lap tracking. Complete the route and cross forward again to earn a lap. Missed markers never require turning back. Off-track speed is capped at 6 / 4.5 / 3.5 m/s on Easy / Medium / Hard, with boost disabled.
+Whips push an active sled beside you within 6 m. The cooldown is 3.5 seconds; a hit grants 0.8 seconds of protection. Sled contact also causes a physical bounce.
 
-Recovery places you at the nearest trail point, clears momentum and adds three seconds to your personal lap and race time. It does not award skipped progress.
+The first forward finish-line crossing arms lap tracking. Complete the route and cross forward again to earn a lap. Missed markers never require turning back.
 
-Physical gamepad validation remains outstanding.
+The first off-track cut is 6 m wide, with a gradual, mild slowdown. Over the next 8 m, the second cut slows you further. Boost is disabled in both cuts. Recovery returns to the nearest trail point, clears momentum and adds three seconds to that player's personal time without awarding skipped progress.
+
+In local duels, a finished player stops driving while the other keeps racing. Results appear after both finish. Each player has their own lap counter, clock, boost, whip cooldown and camera. Pause freezes both. Duels do not overwrite solo records.

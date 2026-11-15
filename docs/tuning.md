@@ -11,7 +11,7 @@ Movement and contact constants live in `godot/scripts/vehicle/SledTuning.gd`. Ga
 | Turn rate | 1.25 rad/s |
 | Normal / drift grip | 7 / 1.8 per second |
 | Drift turn multiplier | 1.3 |
-| Off-track deceleration | 32 m/s squared |
+| First / second cut additional deceleration | 8 / 32 m/s squared |
 | Boost drain / recharge | 38 / 13 per second |
 | Recovery penalty | 3 seconds |
 | Bounce restitution | 0.6 |
@@ -23,11 +23,13 @@ Movement and contact constants live in `godot/scripts/vehicle/SledTuning.gd`. Ga
 
 Drive momentum and impact momentum are separate so steering cannot immediately erase a hit. Both sleds receive opposite impulses; separating contacts are ignored. Finished and inactive sleds do not block the pack. Breeds and sled styles are cosmetic.
 
-| Difficulty | Trail half-width | Off-track cap | Base NPC throttle | Attack interval |
-|---|---:|---:|---:|---:|
-| Easy | 10 m | 6 m/s | 0.76 | 11 s |
-| Medium | 8 m | 4.5 m/s | 0.86 | 7 s |
-| Hard | 6.8 m | 3.5 m/s | 0.95 | 4.5 s |
+The first cut is 6 m wide. Its speed limit smoothly decreases from 25 m/s at the road edge to the first-cut cap. Over the next 8 m, the second cut smoothly lowers the limit to the deep-terrain cap. Boost is disabled outside the road. The normal throttle controller also approaches this limit.
+
+| Difficulty | Trail half-width | First-cut edge cap | Deep second-cut cap | NPC throttle | Attack interval |
+|---|---:|---:|---:|---:|---:|
+| Easy | 10 m | 20 m/s | 10 m/s | 0.76 | 11 s |
+| Medium | 8 m | 18 m/s | 8 m/s | 0.86 | 7 s |
+| Hard | 6.8 m | 16 m/s | 6.5 m/s | 0.95 | 4.5 s |
 
 Rivals use speed-adjusted lookahead, corner braking, scored passing lanes, blocked-lane braking and straightaway boosts. Their throttle differs slightly within the pack. Recovery is reserved for prolonged stalls or departures and uses the nearest trail.
 

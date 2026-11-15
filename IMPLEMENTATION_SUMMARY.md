@@ -1,3 +1,17 @@
+# Local two-player and scenery update
+
+Added top/bottom split-screen with two independent human teams and two NPCs. Inputs use opposite sides of the keyboard, with no Space-bar racing action. Player 1 boosts with F and changes view with C; Player 2 uses slash for boost and Enter for camera. Each player owns their controls, garage choices, lap tracking, clock, recovery penalties and camera. Results wait for both humans; local duels do not write solo records.
+
+Added musher POV with camera-specific visibility so a player's head does not block their view. The throne driver now stands on a front platform. City Sprint joins the other three courses, and every course has more rolling elevation. A six-metre first cut slows gently; a second eight-metre cut progressively slows more.
+
+Smoother rounded meshes and surface grain add detail. New roadside elements include animated polar bears and lemurs, spiral lollipops, city buses, windows, lamps and a clock tower. Shared split-screen rendering uses one world and one simulation. Removing unused sky cubemaps also cleared the preview renderer's texture-leak errors on exit.
+
+Validation in Godot 4.6.3: 31 smoke checks, 15 contact/whip checks and 22 local-duel checks passed. Steering bots finished all three laps in both solo and two-player modes on all four courses. All three NPCs finished each of the twelve course/difficulty combinations without recovery (36 finishes). Rendered previews cover all environments, roadside landmarks, musher view, the two-player garage and split-screen. Tests use practice mode or disposable saves.
+
+The following entries describe earlier milestones; their track counts, controls and off-track rules are superseded above.
+
+---
+
 # Three-course combat and garage update - November 14, 2026
 
 Added physical sled bounces, sideways whip attacks (E / gamepad X), passing and attacking rivals, and Easy / Medium / Hard settings. Difficulty adjusts road width, off-track speed and rival pace/aggression.
