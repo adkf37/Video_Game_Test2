@@ -134,15 +134,22 @@ func start() -> void:
 func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("pause"):
 		if state == RaceState.PAUSED:
+			GameState.play_ui("close")
 			resume()
 		elif state in [RaceState.RACING, RaceState.COUNTDOWN]:
+			GameState.play_ui("open")
 			resume_state = state
 			state = RaceState.PAUSED
 			get_tree().paused = true
 	if Input.is_action_just_pressed("mute"):
 		GameState.muted = not GameState.muted
+		GameState.play_ui("toggle")
 		if not GameState.practice_run:
 			GameState.save()
+	if Input.is_action_just_pressed("volume_up"):
+		GameState.change_volume(1)
+	if Input.is_action_just_pressed("volume_down"):
+		GameState.change_volume(-1)
 	if state == RaceState.COUNTDOWN:
 		countdown -= delta
 		var number := ceili(countdown)

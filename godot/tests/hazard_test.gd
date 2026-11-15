@@ -30,7 +30,8 @@ func _run() -> void:
 		var p2: CharacterBody3D = race.players[1]
 		var sound: Node = scene.get_node("RaceAudio")
 		check(race.items.pickups.size() == 3, "three scarce bones on course %d" % course)
-		check(sound.music.stream == sound.SCORES[course] and sound.music.stream.loop, "course melody is configured to loop")
+		check(sound.music.stream == sound.layers and sound.layers.stream_count == 2 and sound.SCORES[course][0].loop and sound.SCORES[course][1].loop,
+			"course score has looping melody and drum layers")
 		for racer in get_nodes_in_group("racers"):
 			racer.set_physics_process(false)
 			racer.collision_layer = 0

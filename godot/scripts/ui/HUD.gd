@@ -98,7 +98,10 @@ func _button(parent: Node, text: String, pos: Vector2, callback: Callable, prima
 	focus.set_border_width_all(2)
 	focus.border_color = CREAM
 	button.add_theme_stylebox_override("focus", focus)
+	var click := "confirm" if primary else ("back" if text.begins_with("Back") else "select")
+	button.pressed.connect(func(): GameState.play_ui(click))
 	button.pressed.connect(callback)
+	button.mouse_entered.connect(func(): GameState.play_ui("hover"))
 	return button
 
 func _group() -> Control:
@@ -142,7 +145,7 @@ func _build_menu() -> void:
 		_label(menu_panel, "E   Throw Golden Bone", Vector2(865, 340), 18, CORAL, Vector2(360, 35))
 		_label(menu_panel, "C   Chase / musher view", Vector2(865, 378), 18, CREAM, Vector2(360, 35))
 		_label(menu_panel, "R   Recover (+3 seconds)", Vector2(865, 416), 18, CREAM, Vector2(360, 35))
-		_label(menu_panel, "ESC   Pause       M   Sound", Vector2(865, 454), 17, CREAM, Vector2(360, 35))
+		_label(menu_panel, "ESC  Pause    M  Mute    - +  Volume", Vector2(865, 454), 17, CREAM, Vector2(360, 35))
 		_label(menu_panel, "Collect glowing bones along the trail.", Vector2(865, 502), 14, MUTED, Vector2(365, 30))
 	_button(menu_panel, "Quit", Vector2(900, 620), func(): get_tree().quit(), false)
 
@@ -160,7 +163,9 @@ func _selector(caption: String, key: String, choices: Array, y: float, x: float 
 	for choice: String in choices:
 		option.add_item(choice)
 	option.select(GameState.get(key))
+	option.mouse_entered.connect(func(): GameState.play_ui("hover"))
 	option.item_selected.connect(func(index: int):
+		GameState.play_ui("select")
 		GameState.set_option(key, index)
 		if key in ["course", "difficulty", "race_mode"]:
 			get_tree().reload_current_scene()
@@ -210,7 +215,7 @@ func _build_race() -> void:
 	countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast = _label(race_panel, "", Vector2(280, 177), 32, INK, Vector2(720, 60))
 	toast.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	audio_label = _label(root, "", Vector2(510, 14), 12, INK, Vector2(260, 30))
+	audio_label = _label(root, "", Vector2(440, 14), 12, INK, Vector2(400, 30))
 	audio_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 func _build_pause() -> void:
@@ -310,7 +315,7 @@ func _process(delta: float) -> void:
 	boost_bar.value = sled.boost_energy
 	item_label.text = sled.item_hint()
 	countdown_label.text = str(clampi(ceili(manager.countdown), 1, 3)) if manager.state == manager.RaceState.COUNTDOWN else ""
-	audio_label.text = "M  /  SOUND OFF" if GameState.muted else "M  /  SOUND ON"
+	audio_label.text = ("M  /  SOUND OFF" if GameState.muted else "M  /  SOUND ON") + "     -  +  /  VOLUME %d%%" % roundi(GameState.volume * 100)
 	if not pause_panel.visible:
 		toast_remaining -= delta
 	toast.visible = toast_remaining > 0

@@ -48,7 +48,7 @@ Each breed has its own anatomy, coat, ears, muzzle and animated team layout. Chi
 | Chase / musher camera | C | Enter |
 | Pause both | Esc | Esc |
 
-**Space is unassigned to racing controls.** Solo mode also accepts arrows. M toggles sound. See [full controls and gamepad mappings](docs/controls.md).
+**Space is unassigned to racing controls.** Solo mode also accepts arrows. M mutes and **-** / **+** change the volume. See [full controls and gamepad mappings](docs/controls.md).
 
 Musher view puts the dogs directly ahead. The throne's driver stands on a front platform. Each split-screen player switches views independently; Player 1 uses the top screen and Player 2 the bottom.
 
@@ -56,7 +56,7 @@ Sleds physically bounce apart when they collide. Collect one of just **three Gol
 
 Watch the roadside warning signs: bears and buses cross the trail, lemurs lob coconuts (a hit stops your team for 1.5 seconds), and falling lollipops block less than half the road. Alpine Valley also has rolling snowballs. Coconut landing rings show where to dodge. Hazards affect NPCs too, and they consider obstacles when choosing a lane.
 
-Each track has an original looping melody with bass, chords and percussion. Pickups, boost, speed, collisions and race milestones have distinct sounds; the old continuous runner noise is gone. M mutes music and effects together.
+Each track has an original looping score: a melody stem with bass and chords, plus a synchronised drum stem that swells with speed, boosting and the final lap, over a per-biome ambience bed. Effects have several variants and slight pitch shifts so they do not repeat. Crashes and coconuts layer CC0 impacts; menu clicks and dog barks and howls are CC0 recordings (see [credits](godot/assets/audio/CREDITS.md)). Your sled has quiet speed-reactive runner, drift-scrape and off-track crunch loops, and your dogs pant, bark, yip and howl, with pitch by breed and bigger choruses for bigger teams. Rivals are positional: their runners, boosts, bumps and throws pan and fade with distance. In two-player races each player's own sounds sit on their side of the stereo field. M mutes everything and **-** / **+** step the single shared volume in 10% increments; it is saved with your other preferences.
 
 There are **no missed checkpoint gates to return to**. Continue around the route: forward progress around the course validates laps. The first off-track cut is 6 m wide and slows you gently. The next 8 m progressively reduce your speed further. Boost is disabled off-track. Recovery uses the nearest trail point. Repeatedly reversing across the finish line cannot earn laps.
 

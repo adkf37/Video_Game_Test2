@@ -11,7 +11,8 @@ Choose **Solo + 3 rivals** or **2 players + 2 rivals** in the garage. Local two-
 | Recover (+3 seconds) | R | Backspace |
 | Chase / musher view | C | Enter |
 | Pause both players | Esc | Esc |
-| Sound | M | M |
+| Sound | M (mute) | M (mute) |
+| Volume down / up | - / + (or keypad) | - / + (or keypad) |
 
 Space is unassigned to racing controls. Solo mode also accepts arrow steering. The separate controls in two-player mode keep each player's hands on their side of the keyboard. Actual simultaneous-key capacity depends on the keyboard's hardware.
 
@@ -21,7 +22,7 @@ Boost only works on the trail. Releasing boost recharges it; after running empty
 
 Collect a glowing Golden Bone on the trail, then press E (Player 1 / solo) or comma (Player 2) to throw it near the closest eligible opponent within 26 m. The HUD names the target. The bone lands off-track and lures that team for two seconds before their controls return. Targets get four more seconds of protection. You hold one bone at a time; pickups respawn after ten seconds. Throws without a nearby target keep the bone. NPCs collect and throw the same items. Sled contact still causes a physical bounce.
 
-There are only three bones per track; drive within 1.55 m to collect one. Watch the signs for crossing bears, buses, rolling snowballs and falling candy. Lollipops leave at least half the road clear. Move away from the orange coconut landing ring: a direct hit stops your dogs for 1.5 seconds. Hazards affect every racer and freeze when paused. Music plays throughout; M toggles all sound.
+There are only three bones per track; drive within 1.55 m to collect one. Watch the signs for crossing bears, buses, rolling snowballs and falling candy. Lollipops leave at least half the road clear. Move away from the orange coconut landing ring: a direct hit stops your dogs for 1.5 seconds. Hazards affect every racer and freeze when paused. Music plays throughout; M mutes all sound and -/+ change the volume.
 
 The first forward finish-line crossing arms lap tracking. Complete the route and cross forward again to earn a lap. Missed markers never require turning back.
 

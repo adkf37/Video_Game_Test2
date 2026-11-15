@@ -1,6 +1,7 @@
 extends Node
 ## Offline personal best, separate from any older prototype saves.
 const SAVE_PATH := "user://alpine_time_trial_v1.cfg"
+const DEFAULT_VOLUME := 0.7
 var course := 0
 var difficulty := 1
 var breed := 0
@@ -13,12 +14,15 @@ var save_path := SAVE_PATH
 var best_time := 0.0
 var best_lap := 0.0
 var muted := false
+var volume := DEFAULT_VOLUME
+var ui_sound: Node
 var save_error := false
 var practice_run := false
 
 func _ready() -> void:
 	var config := ConfigFile.new()
 	if config.load(save_path) == OK:
+		volume = clampf(float(config.get_value("audio", "volume", DEFAULT_VOLUME)), 0.0, 1.0)
 		course = clampi(int(config.get_value("garage", "course", 0)), 0, RaceCatalog.COURSES.size() - 1)
 		difficulty = clampi(int(config.get_value("garage", "difficulty", 1)), 0, 2)
 		breed = clampi(int(config.get_value("garage", "breed", 0)), 0, 3)
@@ -27,6 +31,24 @@ func _ready() -> void:
 			set(key, clampi(int(config.get_value("garage", key, get(key))), 0, 1 if key == "race_mode" else 3))
 	load_records()
 	_setup_input()
+	apply_volume()
+	ui_sound = preload("res://scripts/core/UiSound.gd").new()
+	add_child(ui_sound)
+
+func play_ui(kind: String) -> void:
+	ui_sound.play(kind)
+
+# One shared mix: the default volume leaves the master bus at 0 dB.
+func apply_volume() -> void:
+	AudioServer.set_bus_mute(0, volume <= 0.0)
+	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(volume, 0.01) / DEFAULT_VOLUME))
+
+func change_volume(steps: int) -> void:
+	volume = snappedf(clampf(volume + steps * 0.1, 0.0, 1.0), 0.1)
+	apply_volume()
+	if not practice_run:
+		save()
+	play_ui("hover")
 
 func load_records() -> void:
 	best_time = 0.0
@@ -65,10 +87,12 @@ func _setup_input() -> void:
 			event.device = device
 			event.button_index = binding[1]
 			InputMap.action_add_event(prefix + binding[0], event)
-	for binding: Array in [["pause", KEY_ESCAPE], ["mute", KEY_M]]:
-		if not InputMap.has_action(binding[0]):
-			InputMap.add_action(binding[0])
-		InputMap.action_erase_events(binding[0])
+	for action: String in ["pause", "mute", "volume_up", "volume_down"]:
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
+		InputMap.action_erase_events(action)
+	for binding: Array in [["pause", KEY_ESCAPE], ["mute", KEY_M], ["volume_up", KEY_EQUAL], ["volume_up", KEY_KP_ADD],
+			["volume_down", KEY_MINUS], ["volume_down", KEY_KP_SUBTRACT]]:
 		_bind_key(binding[0], binding[1])
 	var pause_button := InputEventJoypadButton.new()
 	pause_button.button_index = JOY_BUTTON_START
@@ -112,6 +136,7 @@ func record_section() -> String:
 
 func _write_preferences(config: ConfigFile) -> void:
 	config.set_value("audio", "muted", muted)
+	config.set_value("audio", "volume", volume)
 	for key in ["course", "difficulty", "breed", "sled_style", "race_mode", "breed2", "sled_style2"]:
 		config.set_value("garage", key, get(key))
 

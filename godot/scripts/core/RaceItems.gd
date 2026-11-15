@@ -91,6 +91,8 @@ func throw_bone(thrower: Node3D) -> bool:
 		"target": target, "generation": target.item_generation, "landed": false})
 	if thrower.is_player:
 		manager.get_parent().get_node("RaceAudio").event("throw", thrower.player_index)
+	else:
+		manager.get_parent().get_node("RaceAudio").event_at("throw", thrower.global_position)
 	return true
 
 func _physics_process(delta: float) -> void:

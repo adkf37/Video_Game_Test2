@@ -171,8 +171,11 @@ func _resolve_bump(other: CharacterBody3D, normal: Vector3) -> void:
 	other.receive_impact(-impulse)
 	bump_count += 1
 	other.bump_count += 1
+	var audio := race_manager.get_parent().get_node("RaceAudio")
 	if is_player or other.is_player:
-		race_manager.get_parent().get_node("RaceAudio").event("crash", player_index if is_player else other.player_index)
+		audio.event("crash", player_index if is_player else other.player_index)
+	else:
+		audio.event_at("crash", (global_position + other.global_position) * 0.5)
 
 func receive_impact(impulse: Vector3) -> void:
 	impulse.y = 0
@@ -238,9 +241,13 @@ func hit_hazard(kind: String, impulse: Vector3 = Vector3.ZERO) -> bool:
 		current_speed *= 0.4
 		drive_velocity *= 0.4
 		receive_impact(impulse)
+	var audio := race_manager.get_parent().get_node("RaceAudio")
+	var sound := "coconut" if kind == "coconut" else "crash"
 	if is_player:
-		race_manager.get_parent().get_node("RaceAudio").event("coconut" if kind == "coconut" else "crash", player_index)
+		audio.event(sound, player_index)
 		race_manager.announcement.emit("COCONUT BONK / 1.5s" if kind == "coconut" else "WATCH OUT / " + kind.to_upper())
+	else:
+		audio.event_at(sound, global_position)
 	return true
 
 func can_drive() -> bool:
