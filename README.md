@@ -14,6 +14,8 @@ Open `godot/project.godot` in Godot 4.6.3, press **F5**, choose your race mode, 
 
 The launcher checks PATH and Downloads; supply `-GodotPath 'C:\path\to\Godot.exe'` if needed. No external assets or manual scene setup are required.
 
+**[Play in your browser](https://dogsled-kart-439446327091.us-central1.run.app).** For Cloud Run setup, exports and updates, see [web deployment](docs/web-deployment.md).
+
 ## Tracks and garage
 
 - **Alpine Valley:** snow trails, pines, cabins, a frozen lake and animated polar bears.

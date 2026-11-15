@@ -12,3 +12,8 @@ Thumbs.db
 
 # Local runtime logs
 artifacts/*.log
+
+# Local web builds and browser test dependencies
+build/
+web/node_modules/
+godot/.godot/
