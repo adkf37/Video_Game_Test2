@@ -1,6 +1,8 @@
 # Browser playtest on Cloud Run
 
-Play: https://dogsled-kart-439446327091.us-central1.run.app
+Play: https://dogsledkart.cloud.run
+
+Original service URL (still works): https://dogsled-kart-439446327091.us-central1.run.app
 
 Manage: https://console.cloud.google.com/run/detail/us-central1/dogsled-kart/metrics?project=dogsled-kart-af-20261114
 
@@ -16,7 +18,21 @@ The Godot game runs on the player's computer using WebAssembly and WebGL 2. Clou
 - Container built remotely with Cloud Build and stored in the project's `cloud-run-source-deploy` Artifact Registry repository.
 - Existing billing account pays for this separate project. Instance limits are not a spending cap; outbound downloads, build storage and container storage can also incur charges.
 
-No custom domain or online game server is configured. The first request after idle may take longer while Cloud Run starts a container. The user's active gcloud project configuration is not changed.
+The custom URL `dogsledkart.cloud.run` maps directly to this service using Cloud Run's custom URL preview. No domain registration, DNS zone, external load balancer, or online game server is configured. The first request after idle may take longer while Cloud Run starts a container. The user's active gcloud project configuration is not changed.
+
+## Custom URL
+
+The mapping belongs to the game project and survives service revisions. Updating the game does not require recreating it. Avoid deleting the mapping: deletion releases the name for others to claim. Cloud Run custom URLs are currently a preview feature: https://docs.cloud.google.com/run/docs/custom-urls
+
+Inspect the existing mapping:
+
+```powershell
+gcloud beta run domain-mappings describe --domain=dogsledkart.cloud.run --project=dogsled-kart-af-20261114 --region=us-central1
+```
+
+The installed gcloud 568 client predates support for claiming `.cloud.run` names and incorrectly requests domain ownership verification when creating one. The mapping was created with the documented Cloud Run DomainMapping REST API using the existing gcloud account. A current gcloud release supports creation with `gcloud beta run domain-mappings create --service=dogsled-kart --domain=dogsledkart.cloud.run --project=dogsled-kart-af-20261114 --region=us-central1`.
+
+Saves on the original `run.app` address stay there; the new address has its own browser storage.
 
 ## Export and deploy an update
 
@@ -50,7 +66,7 @@ In another terminal, run `npm test` from `web/`. Tests use installed Google Chro
 To check the live service:
 
 ```powershell
-$env:GAME_TEST_URL = gcloud run services describe dogsled-kart --project=dogsled-kart-af-20261114 --region=us-central1 --format='value(status.url)'
+$env:GAME_TEST_URL = 'https://dogsledkart.cloud.run'
 cd web
 npm test
 ```
