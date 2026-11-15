@@ -5,6 +5,9 @@ enum RaceState { MENU, COUNTDOWN, RACING, PAUSED, FINISHED }
 const RIVAL_SCRIPT = preload("res://scripts/ai/RivalController.gd")
 const SLED_SCENE = preload("res://scenes/vehicles/Sled.tscn")
 const LAP_SCRIPT = preload("res://scripts/track/LapTracker.gd")
+var items: Node3D
+var hazards: Node3D
+var estimated_finishes: Dictionary = {}
 var state := RaceState.MENU
 var resume_state := RaceState.RACING
 var max_laps := 3
@@ -62,12 +65,22 @@ func _setup_grid() -> void:
 		rival.team_color = colors[i]
 		rival.grid_index = i
 		rival.lane = (i - (3 - players.size()) * 0.5) * track.half_width * 0.5
-		rival.cruise_throttle = RaceCatalog.NPC_PACE[GameState.difficulty] + (i - 1) * 0.025
+		rival.cruise_throttle = (RaceCatalog.NPC_PACE[GameState.difficulty] + (i - 1) * 0.025) * RaceCatalog.CHALLENGE_MULTIPLIER
 		rival.get_node("DogTeam").breed = (i + 1) % 4
 		rival.get_node("DogTeam").sled_style = (i + 1) % 4
 		rival.get_node("DogTeam").team_color = colors[i]
 		get_parent().add_child(rival)
 		rivals.append(rival)
+	items = Node3D.new()
+	items.name = "RaceItems"
+	items.set_script(preload("res://scripts/core/RaceItems.gd"))
+	get_parent().add_child(items)
+	items.setup(self, track)
+	hazards = Node3D.new()
+	hazards.name = "TrackHazards"
+	hazards.set_script(preload("res://scripts/track/TrackHazards.gd"))
+	get_parent().add_child(hazards)
+	hazards.setup(self, track)
 	apply_customization()
 	_place_at_start()
 
@@ -81,6 +94,10 @@ func apply_customization() -> void:
 		visual.rebuild()
 
 func _place_at_start() -> void:
+	if items:
+		items.reset()
+	if hazards:
+		hazards.reset()
 	for i in range(players.size()):
 		var frame: Transform3D = track.frame_at(-0.04)
 		if players.size() == 2:
@@ -99,6 +116,7 @@ func start() -> void:
 	elapsed_time = 0.0
 	finish_order.clear()
 	finish_times.clear()
+	estimated_finishes.clear()
 	player_finish_place = 0
 	lap_start = 0.0
 	current_lap = 0
@@ -189,6 +207,9 @@ func _human_lap(index: int, number: int) -> void:
 				all_done = false
 		if all_done:
 			state = RaceState.FINISHED
+			if players.size() == 1:
+				_estimate_remaining_rivals()
+			get_parent().get_node("RaceAudio").event("finish")
 			new_record = GameState.record_run(player_times[0], lap_times.min()) if players.size() == 1 else false
 			race_finished.emit(player_times[0])
 		else:
@@ -224,11 +245,34 @@ func register_finish(racer: Node) -> void:
 		return
 	if tracker_for(racer).current_lap < max_laps:
 		return
+	racer.clear_items()
 	finish_order.append(racer)
 	finish_times[racer] = elapsed_time
 
 func race_progress(racer: Node) -> float:
 	return tracker_for(racer).race_progress()
+
+func _estimate_remaining_rivals() -> void:
+	# Keep real finishes and the on-track order. Project remaining distance using
+	# each rival's average pace so a temporary slowdown doesn't inflate its time.
+	var previous_time := elapsed_time
+	for row in standings():
+		var rival: Node = row.racer
+		if row.finished or row.player:
+			continue
+		var progress: float = clampf(row.progress, 0, max_laps)
+		var average_speed: float = progress * track.total_length / maxf(elapsed_time, 1)
+		if progress < 0.05:
+			average_speed = SledTuning.MAX_SPEED * rival.cruise_throttle * 0.8
+		var remaining: float = (max_laps - progress) * track.total_length
+		var estimate: float = elapsed_time + remaining / maxf(average_speed, 3)
+		estimate = maxf(estimate, previous_time + 0.01)
+		previous_time = estimate
+		rival.finished = true
+		rival.clear_items()
+		finish_order.append(rival)
+		finish_times[rival] = estimate
+		estimated_finishes[rival] = true
 
 func standings() -> Array[Dictionary]:
 	var rows: Array[Dictionary] = []
@@ -243,6 +287,7 @@ func standings() -> Array[Dictionary]:
 			"color": (Color("#ed8668") if index == 0 else Color("#5fcddd")) if human else racer.team_color,
 			"player": human, "player_index": index, "finished": racer in finish_order,
 			"order": finish_order.find(racer), "time": finish_times.get(racer, 0.0),
+			"estimated": estimated_finishes.has(racer),
 			"progress": race_progress(racer), "grid": 2 + index if human else racer.grid_index})
 	rows.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		if a.finished != b.finished:

@@ -17,7 +17,7 @@ There are no narrow checkpoint gates. Leaving the road gradually lowers the spee
 
 ## Scenery
 
-Snowy art remains in `AlpineTrack.gd`. `BiomeDecor.gd` builds jungle and candy scenery. `CityDecor.gd` supplies buildings, batched windows, lamps, crossings and a clock tower. `TrackLife.gd` adds animated polar bears and lemurs, spiral lollipops and parked buses.
+Snowy art remains in `AlpineTrack.gd`. `BiomeDecor.gd` builds jungle and candy scenery. `CityDecor.gd` supplies buildings, batched windows, lamps, crossings and a clock tower. `TrackLife.gd` adds animated polar bears, arctic foxes, lemurs, toucans, swaying lollipops, waving gingerbread spectators, moving buses and pigeons.
 
 Shared geometry helpers in `scripts/art/AlpineArt.gd` use smoother rounded meshes and deterministic surface grain. All art is local and procedural.
 

@@ -17,7 +17,7 @@ var lap_label: Label
 var speed_label: Label
 var boost_bar: ProgressBar
 var status_label: Label
-var whip_label: Label
+var item_label: Label
 var best_label: Label
 var result_time: Label
 var result_details: Label
@@ -120,10 +120,10 @@ func _build_menu() -> void:
 	var breeds: Array[String] = []
 	for i in range(4):
 		breeds.append("%s  /  %d dogs" % [RaceCatalog.BREEDS[i], RaceCatalog.TEAM_COUNTS[i]])
-	_selector("PLAYER 1 DOGS", "breed", breeds, 382)
-	_selector("PLAYER 1 SLED", "sled_style", RaceCatalog.SLEDS, 447)
+	_selector("PLAYER 1 DOGS" if GameState.race_mode == 1 else "DOG TEAM", "breed", breeds, 382)
+	_selector("PLAYER 1 SLED" if GameState.race_mode == 1 else "SLED", "sled_style", RaceCatalog.SLEDS, 447)
 	start_button = _button(menu_panel, "Race together    >" if GameState.race_mode == 1 else "Race the pack    >", Vector2(76, 511), manager.start)
-	_label(menu_panel, "P1  WASD steer / F boost / SHIFT drift\nE whip / R recover / C change view\nESC pause / M sound", Vector2(65, 579), 14, MUTED, Vector2(365, 75))
+	_label(menu_panel, menu_controls_text(), Vector2(65, 579), 14, MUTED, Vector2(365, 75))
 	best_label = _label(menu_panel, "", Vector2(65, 663), 12, CORAL, Vector2(360, 25))
 	_label(menu_panel, RaceCatalog.COURSES[GameState.course].to_upper(), Vector2(870, 44), 21, INK, Vector2(370, 40)).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_label(menu_panel, "4 TEAMS / 3 LAPS / " + RaceCatalog.DIFFICULTIES[GameState.difficulty].to_upper(), Vector2(870, 80), 13, INK, Vector2(370, 40)).horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -132,7 +132,18 @@ func _build_menu() -> void:
 		_label(menu_panel, "PLAYER 2  /  BOTTOM SCREEN", Vector2(865, 185), 17, Color("#5fcddd"))
 		_selector("DOG TEAM", "breed2", breeds, 254, 865)
 		_selector("SLED", "sled_style2", RaceCatalog.SLEDS, 329, 865)
-		_label(menu_panel, "ARROWS steer / SLASH boost\nPERIOD drift / COMMA whip\nBACKSPACE recover / ENTER view\nSpace is unassigned. ESC pauses both.", Vector2(865, 393), 15, MUTED, Vector2(365, 115))
+		_label(menu_panel, "ARROWS steer / SLASH boost\nPERIOD drift / COMMA bone\nBACKSPACE recover / ENTER view\nSpace is unassigned. ESC pauses both.", Vector2(865, 393), 15, MUTED, Vector2(365, 115))
+	else:
+		_panel(menu_panel, Vector2(840, 165), Vector2(410, 385), Color(0.055, 0.15, 0.19, 0.95))
+		_label(menu_panel, "SOLO CONTROLS", Vector2(865, 183), 22, CORAL, Vector2(360, 40))
+		_label(menu_panel, "WASD / ARROWS", Vector2(865, 229), 23, CREAM, Vector2(360, 40))
+		_label(menu_panel, "Drive, steer & brake", Vector2(865, 265), 15, MUTED, Vector2(360, 30))
+		_label(menu_panel, "F   Boost        SHIFT   Drift", Vector2(865, 302), 18, CREAM, Vector2(360, 35))
+		_label(menu_panel, "E   Throw Golden Bone", Vector2(865, 340), 18, CORAL, Vector2(360, 35))
+		_label(menu_panel, "C   Chase / musher view", Vector2(865, 378), 18, CREAM, Vector2(360, 35))
+		_label(menu_panel, "R   Recover (+3 seconds)", Vector2(865, 416), 18, CREAM, Vector2(360, 35))
+		_label(menu_panel, "ESC   Pause       M   Sound", Vector2(865, 454), 17, CREAM, Vector2(360, 35))
+		_label(menu_panel, "Collect glowing bones along the trail.", Vector2(865, 502), 14, MUTED, Vector2(365, 30))
 	_button(menu_panel, "Quit", Vector2(900, 620), func(): get_tree().quit(), false)
 
 func _selector(caption: String, key: String, choices: Array, y: float, x: float = 65) -> void:
@@ -182,8 +193,8 @@ func _build_race() -> void:
 	boost_bar.show_percentage = false
 	boost_bar.add_theme_stylebox_override("background", _style(Color("#3b5f6c"), 4))
 	boost_bar.add_theme_stylebox_override("fill", _style(CORAL, 4))
-	whip_label = _label(race_panel, "E  /  WHIP READY", Vector2(350, 620), 16, INK, Vector2(580, 38))
-	whip_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	item_label = _label(race_panel, "COLLECT A GOLDEN BONE", Vector2(350, 620), 16, INK, Vector2(580, 38))
+	item_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label = _label(race_panel, "", Vector2(350, 555), 17, INK, Vector2(580, 38))
 	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	var map := Control.new()
@@ -194,7 +205,7 @@ func _build_race() -> void:
 	race_panel.add_child(map)
 	map.position = Vector2(1020, 490)
 	map.size = Vector2(230, 198)
-	_label(race_panel, "SHIFT drift   F boost   E whip   R recover   C view   ESC pause", Vector2(365, 665), 13, INK)
+	_label(race_panel, "SHIFT drift   F boost   E throw bone   R recover   C view   ESC pause", Vector2(365, 665), 13, INK)
 	countdown_label = _label(race_panel, "", Vector2(300, 230), 100, INK, Vector2(680, 160))
 	countdown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	toast = _label(race_panel, "", Vector2(280, 177), 32, INK, Vector2(720, 60))
@@ -258,7 +269,10 @@ func _refresh_standings() -> void:
 		var row := rows[i]
 		var name_text: String = row.name.to_upper() + ("  <" if row.player else "")
 		leaderboard.text += "%d   %s%s\n" % [i + 1, name_text, "  FIN" if row.finished else ""]
-		result_details.text += "%d   %-10s  %s\n" % [i + 1, row.name.to_upper(), GameState.time_text(row.time) if row.finished else "Racing..."]
+		var time_text: String = GameState.time_text(row.time) if row.finished else "Racing..."
+		if row.estimated:
+			time_text += " est."
+		result_details.text += "%d   %-10s  %s\n" % [i + 1, row.name.to_upper(), time_text]
 		if row.player_index == 0:
 			position_label.text = "%d / 4" % (i + 1)
 
@@ -294,7 +308,7 @@ func _process(delta: float) -> void:
 	lap_label.text = "LAP  %d / 3" % mini(manager.current_lap + 1, 3)
 	speed_label.text = "%d" % roundi(sled.get_speed_kph())
 	boost_bar.value = sled.boost_energy
-	whip_label.text = "E  /  WHIP READY" if sled.whip_cooldown <= 0 else "WHIP RECHARGING  %.1fs" % sled.whip_cooldown
+	item_label.text = sled.item_hint()
 	countdown_label.text = str(clampi(ceili(manager.countdown), 1, 3)) if manager.state == manager.RaceState.COUNTDOWN else ""
 	audio_label.text = "M  /  SOUND OFF" if GameState.muted else "M  /  SOUND ON"
 	if not pause_panel.visible:
@@ -340,7 +354,7 @@ func _build_split() -> void:
 		boost.add_theme_stylebox_override("fill", _style(color, 3))
 		var status := _label(split_panel, "", Vector2(320, y + 291), 16, INK, Vector2(620, 28))
 		status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var controls := "WASD / F boost / SHIFT drift / E whip / R recover / C view" if i == 0 else "ARROWS / SLASH boost / PERIOD drift / COMMA whip / BACKSPACE recover / ENTER view"
+		var controls := "WASD / F boost / SHIFT drift / E throw bone / R recover / C view" if i == 0 else "ARROWS / SLASH boost / PERIOD drift / COMMA bone / BACKSPACE recover / ENTER view"
 		_label(split_panel, controls, Vector2(320, y + 327), 12, INK, Vector2(930, 25))
 		var message := _label(split_panel, "", Vector2(290, y + 113), 52, INK, Vector2(700, 100))
 		message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -356,8 +370,13 @@ func _update_split() -> void:
 		fields.view.text = "MUSHER VIEW" if GameState.camera_modes[i] == 1 else "CHASE VIEW"
 		fields.speed.text = "%d KM/H    MUSH" % roundi(player.get_speed_kph())
 		fields.boost.value = player.boost_energy
-		fields.status.text = ("WHIP READY" if player.whip_cooldown <= 0 else "WHIP %.1fs" % player.whip_cooldown)
+		fields.status.text = player.item_hint()
 		if player.offroad:
 			fields.status.text += "  /  " + ("FIRST CUT" if player.offroad_cut == 1 else "SECOND CUT")
 		fields.message.add_theme_font_size_override("font_size", 25 if done else 72)
 		fields.message.text = "FINISHED / Other player still racing" if done else (str(clampi(ceili(manager.countdown), 1, 3)) if manager.state == manager.RaceState.COUNTDOWN else "")
+
+func menu_controls_text() -> String:
+	if GameState.race_mode == 1:
+		return "P1  WASD / F boost / SHIFT drift\nE bone / R recover / C view\nESC pauses both / M sound"
+	return "SOLO RACE / three computer rivals\nCollect a bone, then press E to throw.\nDistract a rival's dogs for 2 seconds."

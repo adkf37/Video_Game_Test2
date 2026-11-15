@@ -46,7 +46,7 @@ func reset_race() -> void:
 	reset_to(frame)
 
 func can_drive() -> bool:
-	return not finished and race_manager.state in [race_manager.RaceState.RACING, race_manager.RaceState.FINISHED]
+	return race_manager != null and not finished and race_manager.state in [race_manager.RaceState.RACING, race_manager.RaceState.FINISHED]
 
 func drive_controls(delta: float) -> Dictionary:
 	var lookahead := 9.0 + maxf(0, current_speed - 20) * 0.25
@@ -57,6 +57,8 @@ func drive_controls(delta: float) -> Dictionary:
 	# Score possible passing lanes against nearby teams instead of swerving blindly.
 	for candidate: float in [-track.half_width * 0.5, 0.0, track.half_width * 0.5]:
 		var cost := absf(candidate - lane) * 0.25
+		if race_manager.hazards:
+			cost += race_manager.hazards.lane_cost(route_progress, candidate)
 		for other in get_tree().get_nodes_in_group("racers"):
 			if other == self or not other.can_drive():
 				continue
@@ -90,7 +92,7 @@ func drive_controls(delta: float) -> Dictionary:
 	boost_left = maxf(0.0, boost_left - delta)
 	if boost_wait <= 0 and boost_energy > 60 and absf(angle) < 0.10 and bend < 0.15 and not offroad and not blocked and impact_velocity.length() < 2:
 		boost_left = 0.6 + GameState.difficulty * 0.4
-		boost_wait = 15.0 - GameState.difficulty * 3 + grid_index
+		boost_wait = (15.0 - GameState.difficulty * 3 + grid_index) / RaceCatalog.CHALLENGE_MULTIPLIER
 	stuck_time = stuck_time + delta if current_speed < 1.0 or offroad else 0.0
 	if stuck_time > 4.0:
 		var frame := track.frame_at(route_progress)
@@ -99,12 +101,12 @@ func drive_controls(delta: float) -> Dictionary:
 		lap_tracker.rebase(route_progress)
 		stuck_time = 0.0
 		recovery_count += 1
-	var attack := attack_wait <= 0 and whip_cooldown <= 0 and whip_target() != null
+	var attack: bool = attack_wait <= 0 and has_bone and distraction_time <= 0 and race_manager.items and race_manager.items.target_for(self) != null
 	if attack:
-		attack_wait = RaceCatalog.NPC_ATTACK_INTERVAL[GameState.difficulty] + grid_index * 0.5
+		attack_wait = (RaceCatalog.NPC_ATTACK_INTERVAL[GameState.difficulty] + grid_index * 0.5) / RaceCatalog.CHALLENGE_MULTIPLIER
 	return {"throttle": throttle, "steer": steer, "drift": false,
 		"boost": boost_left > 0 and absf(angle) < 0.25 and not blocked,
-		"whip": attack}
+		"throw_item": attack}
 
 func _lap_completed(number: int) -> void:
 	if number >= race_manager.max_laps:

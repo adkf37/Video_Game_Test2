@@ -1,6 +1,7 @@
 class_name AlpineArt
 extends RefCounted
-## Original low-poly geometry shared by the trail and dog team.
+## Shared procedural geometry for the trail, teams and spectators.
+static var round_shape: SphereMesh
 static func material(color: Color, roughness: float = 0.9) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
@@ -21,12 +22,13 @@ static func box(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> M
 	return mesh(parent, shape, pos, mat)
 
 static func ellipsoid(parent: Node3D, pos: Vector3, size: Vector3, mat: Material) -> MeshInstance3D:
-	var shape := SphereMesh.new()
-	shape.radial_segments = 24
-	shape.rings = 12
-	shape.radius = 0.5
-	shape.height = 1.0
-	var item := mesh(parent, shape, pos, mat)
+	if not round_shape:
+		round_shape = SphereMesh.new()
+		round_shape.radial_segments = 24
+		round_shape.rings = 12
+		round_shape.radius = 0.5
+		round_shape.height = 1.0
+	var item := mesh(parent, round_shape, pos, mat)
 	item.scale = size
 	return item
 

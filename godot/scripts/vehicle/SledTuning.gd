@@ -24,7 +24,3 @@ const BUMP_COOLDOWN := 0.3
 const MAX_BUMP_IMPULSE := 45.0
 const IMPACT_DECAY := 20.0
 const MAX_IMPACT_SPEED := 55.0
-const WHIP_RANGE := 6.0
-const WHIP_KNOCKBACK := 11.0
-const WHIP_COOLDOWN := 3.5
-const HIT_IMMUNITY := 0.8

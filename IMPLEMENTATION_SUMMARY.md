@@ -76,3 +76,22 @@ The next useful iteration is a human handling playtest: tune drift grip, turn re
 ## Git state
 
 The rebuild commit reconciles the earlier staged deletions with the restored and updated working files. All playable scenes, scripts, tests, documentation and preview images are included; runtime logs and the Godot cache remain ignored.
+
+
+## Golden Bone and breed update (November 15, 2026)
+
+- Replaced whipping with shared Golden Bone pickups: one held item, visible throw, nearest eligible opponent within 26 m, two-second off-track chase and four additional seconds of protection. Pickups respawn after ten seconds. NPCs use the same inventory and targets; stuck recovery waits during a chase.
+- Added breed-specific models, including apple-headed Chihuahuas with large upright ears, short muzzles and fine legs. Reused sphere meshes to reduce geometry allocation.
+- Added a prominent solo-controls panel at basecamp; duel instructions remain specific to each player. E / comma now throws a collected bone.
+- Added arctic foxes, toucans, gingerbread spectators and pigeons. Existing bears, lemurs, lollipops and buses also animate.
+- Validation: 31 race-state/save checks, 6 physical-contact checks, 22 duel checks, 22 item checks; animation checks on all four biomes; solo course completion and full two-player races on all courses; NPC completion on all twelve course/difficulty combinations. Road-only traversability checks isolate item interference; full duels and NPC races leave items enabled. Chrome browser smoke checks passed for solo, musher view, split-screen and the launch page.
+- Records use `tour_v4` for the new item rules, preserving older saved records. Browser build remains approximately 9.2 MiB compressed.
+
+## Hazards, music and challenge update (November 15, 2026)
+
+- Reduced 21 bone pickups to three staggered single pickups (14.3%, nearest whole count to 15%); collection radius reduced from 2.4 to 1.55 m.
+- Replaced runner noise and basic beeps with four original 16-bar melodic scores and eleven distinct effects. Checked-in stereo Ogg assets total under 1 MB. Music runs through menus/racing, ducks under events and shares a limiter with pooled effects; both players get cues. Generator: `tools/build_audio.py`.
+- Increased NPC target pace 25% at every difficulty, with proportionally shorter boost/throw cooldowns. Added obstacle-aware lane selection. Records use `tour_v5`, preserving earlier times.
+- Solo finish immediately resolves remaining NPCs in their current order, estimating times from average pace and remaining distance. Actual finishes remain intact; estimates are marked `est.`. Two-player finish behavior remains independent.
+- Added three hazard stations per biome: wandering bears, coconut-throwing lemurs, falling lollipops and crossing buses. Alpine also gets two rolling snowballs. Visible warnings, fixed coconut landing rings, 1.5-second coconut stops, protection from repeat penalties, pause/restart cleanup and swept obstacle separation are covered by tests. Lollipops occupy 48% of the road width and leave the opposite side clear.
+- Validation: 31 smoke, 6 contact, 22 duel, 23 item and 46 hazard checks; scenery checks; 24 solo-result checks across difficulties. Solo and two-player three-lap drives finish all four courses, as do all NPCs across twelve course/difficulty combinations. Final candy footprint changes were rechecked with hazard and NPC tests. Native hazard renders have no runtime errors. Chrome passes solo/duel, camera, pause and actual Web Audio playback/mute/resume checks without console errors. Export is 10.1 MiB compressed.

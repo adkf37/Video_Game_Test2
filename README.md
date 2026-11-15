@@ -18,10 +18,10 @@ The launcher checks PATH and Downloads; supply `-GodotPath 'C:\path\to\Godot.exe
 
 ## Tracks and garage
 
-- **Alpine Valley:** snow trails, pines, cabins, a frozen lake and animated polar bears.
-- **Jungle Rush:** palms, vines, a waterfall, temple and ring-tailed lemurs.
-- **Candy Kingdom:** spiral lollipops, cupcakes, gumdrops and a frosted castle.
-- **City Sprint:** rolling city streets, buses, buildings, streetlights and a clock tower.
+- **Alpine Valley:** snow trails, pines, cabins, a frozen lake and animated polar bears and arctic foxes.
+- **Jungle Rush:** palms, vines, a waterfall, temple and ring-tailed lemurs and toucans.
+- **Candy Kingdom:** spiral lollipops, cupcakes, gumdrops and a frosted castle and waving gingerbread spectators.
+- **City Sprint:** rolling city streets, buses, buildings, streetlights and a clock tower and bobbing pigeons.
 
 Every course now has stronger climbs and descents. Smoother meshes, finer surface grain and additional prop detail retain the colorful procedural style.
 
@@ -32,7 +32,7 @@ Every course now has stronger climbs and descents. Smoother meshes, finer surfac
 | Mastiffs | 2 |
 | Chihuahuas | 12 |
 
-Each breed has its own proportions, colors and animated team layout. Sled choices are **standard wood**, **carbon racer**, **chocolate** and **king's throne**. Garage changes are visual and keep the same handling stats.
+Each breed has its own anatomy, coat, ears, muzzle and animated team layout. Chihuahuas have apple-shaped heads, broad upright ears, short muzzles and fine legs. Sled choices are **standard wood**, **carbon racer**, **chocolate** and **king's throne**. Garage changes are visual and keep the same handling stats.
 
 **Easy / Medium / Hard** changes trail width, off-track speed, rival pace and how often rivals attack. Choices persist between sessions, with separate personal records for each track and difficulty.
 
@@ -43,7 +43,7 @@ Each breed has its own proportions, colors and animated team layout. Sled choice
 | Drive | WASD | Arrow keys |
 | Boost | F | Slash (/) |
 | Drift | Shift | Period (.) |
-| Whip | E | Comma (,) |
+| Throw Golden Bone | E | Comma (,) |
 | Recover (+3 seconds) | R | Backspace |
 | Chase / musher camera | C | Enter |
 | Pause both | Esc | Esc |
@@ -52,7 +52,11 @@ Each breed has its own proportions, colors and animated team layout. Sled choice
 
 Musher view puts the dogs directly ahead. The throne's driver stands on a front platform. Each split-screen player switches views independently; Player 1 uses the top screen and Player 2 the bottom.
 
-Sleds physically bounce apart when they collide. Whips knock nearby sleds sideways, with a 3.5-second cooldown and brief protection after a hit. NPCs can attack too.
+Sleds physically bounce apart when they collide. Collect one of just **three Golden Bones** per track, then throw it near an opponent to lure their dogs off-track for two seconds. Aim carefully: the pickup radius is 1.55 m. Each racer holds one item; pickups respawn, and distracted teams get protection against repeated hits. NPCs collect and throw bones too.
+
+Watch the roadside warning signs: bears and buses cross the trail, lemurs lob coconuts (a hit stops your team for 1.5 seconds), and falling lollipops block less than half the road. Alpine Valley also has rolling snowballs. Coconut landing rings show where to dodge. Hazards affect NPCs too, and they consider obstacles when choosing a lane.
+
+Each track has an original looping melody with bass, chords and percussion. Pickups, boost, speed, collisions and race milestones have distinct sounds; the old continuous runner noise is gone. M mutes music and effects together.
 
 There are **no missed checkpoint gates to return to**. Continue around the route: forward progress around the course validates laps. The first off-track cut is 6 m wide and slows you gently. The next 8 m progressively reduce your speed further. Boost is disabled off-track. Recovery uses the nearest trail point. Repeatedly reversing across the finish line cannot earn laps.
 
@@ -60,9 +64,9 @@ There are **no missed checkpoint gates to return to**. Continue around the route
 
 Juniper, Kodiak and Mika steer, brake for corners, choose passing lanes and boost on straights using the shared sled physics. There is no pace rubber-banding. Stuck rivals recover to the nearest trail point.
 
-Places follow route progress and then finish-line crossing order. The finish table uses competition elapsed times; your personal time and saved record also include manual recovery penalties. Unfinished rivals keep racing after your results screen opens. In local duels, the first human finisher waits while the other keeps racing; results appear after both finish. Recovery penalties, clocks, lap counters and garage selections are independent for each player.
+Places follow route progress and then finish-line crossing order. The finish table uses competition elapsed times; your personal time and saved record also include manual recovery penalties. Solo results resolve immediately: unfinished rivals receive times projected from their average pace and remaining distance, marked **est.**, preserving their current order. Actual finishes stay unchanged. In local duels, the first human finisher waits while the other keeps racing; results appear after both finish. Recovery penalties, clocks, lap counters and garage selections are independent for each player.
 
-Records live in `user://alpine_time_trial_v1.cfg`, under `tour_v3_<course>_<difficulty>` sections. Older solo and pack records are preserved. The new course elevations and handling use a new record version. Local duels do not overwrite solo records.
+NPC target cruising pace is 25% higher across Easy, Medium and Hard, with shorter boost and throw cooldowns. Records live in `user://alpine_time_trial_v1.cfg`, under `tour_v5_<course>_<difficulty>` sections for the new hazard rules. Earlier records are preserved. Local duels do not overwrite solo records.
 
 ## Validation
 
@@ -70,7 +74,7 @@ Records live in `user://alpine_time_trial_v1.cfg`, under `tour_v3_<course>_<diff
 .\tools\test_game.ps1 -GodotPath 'C:\path\to\Godot_console.exe'
 ```
 
-The runner imports the project, checks race states, continuous laps, off-track penalties, customization, saves, physical collisions and whips, plus separate player inputs, cameras, pause, recovery and finish order. It drives three laps in solo and local two-player modes on every course and runs NPC races at all twelve course/difficulty combinations. Tests do not overwrite player records.
+The runner imports the project, checks race states, continuous laps, off-track penalties, customization, saves, physical collisions and Golden Bone pickups/throws, plus separate player inputs, cameras, pause, recovery and finish order. It drives three laps in solo and local two-player modes on every course and runs NPC races at all twelve course/difficulty combinations. Tests do not overwrite player records.
 
 Generate previews with:
 
@@ -86,8 +90,9 @@ Paths below are relative to `godot/`:
 
 - `scripts/core/RaceCatalog.gd`: selections, team sizes and difficulty.
 - `scripts/vehicle/SledTuning.gd`: handling and contact tuning.
-- `scripts/vehicle/SledController.gd`: movement, collisions and whips.
-- `scripts/vehicle/DogTeam.gd`, `SledStyles.gd`: procedural models.
+- `scripts/vehicle/SledController.gd`: movement, collisions and Golden Bone pickups/throws.
+- `scripts/vehicle/DogTeam.gd`, `DogModels.gd`, `SledStyles.gd`: procedural models.
+- `scripts/core/RaceItems.gd`: Golden Bone pickups, throws and respawning.
 - `scripts/track/AlpineTrack.gd`, `BiomeDecor.gd`: the four courses.
 - `scripts/track/CityDecor.gd`, `TrackLife.gd`: city scenery and roadside characters.
 - `scripts/camera/ChaseCamera.gd`, `SplitScreen.gd`: chase/POV and shared-world split-screen.

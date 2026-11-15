@@ -12,6 +12,7 @@ const SECOND_CUT_WIDTH := 8.0
 const FIRST_CUT_CAPS := [20.0, 18.0, 16.0]
 const OFFROAD_CAPS := [10.0, 8.0, 6.5]
 const NPC_PACE := [0.76, 0.86, 0.95]
+const CHALLENGE_MULTIPLIER := 1.25
 const NPC_ATTACK_INTERVAL := [11.0, 7.0, 4.5]
 
 static func offroad_limit(distance: float, half_width: float, difficulty: int) -> float:

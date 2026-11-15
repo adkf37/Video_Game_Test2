@@ -45,16 +45,17 @@ func _run() -> void:
 			Input.action_release(action)
 		await capture("track-%d-breed-%d.png" % [state.course, state.breed])
 		if state.course == 0:
-			# Isolate a side-by-side hit to inspect the swing at the contact instant.
+			# Isolate a Golden Bone throw to inspect its visible arc.
 			var pose := track.frame_at(0.10)
 			sled.reset_to(pose)
 			var rival: CharacterBody3D = race.rivals[0]
 			pose.origin += pose.basis.x * 4.5
 			rival.reset_to(pose)
 			await physics_frame
-			sled.try_whip()
+			sled.has_bone = true
+			sled.try_throw()
 			await frames(3)
-			await capture("whip-contact.png")
+			await capture("golden-bone-throw.png")
 		scene.queue_free()
 		await frames(2)
 	quit()

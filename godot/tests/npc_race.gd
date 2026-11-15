@@ -32,7 +32,7 @@ func _run() -> void:
 				print("RACING ", course, "/", difficulty, " elapsed ", race.elapsed_time)
 		for rival in race.rivals:
 			var success: bool = rival.finished and rival.lap_tracker.current_lap == 3
-			print("NPC ", course, "/", difficulty, " ", rival.racer_name, " finish=", success, " recoveries=", rival.recovery_count, " bumps=", rival.bump_count, " whips=", rival.whip_hits)
+			print("NPC ", course, "/", difficulty, " ", rival.racer_name, " finish=", success, " recoveries=", rival.recovery_count, " bumps=", rival.bump_count, " bones=", rival.bones_thrown)
 			if not success:
 				failures += 1
 		if race.current_lap != 0 or race.player_position() != 4:

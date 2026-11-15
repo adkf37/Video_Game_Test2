@@ -39,9 +39,9 @@ func load_records() -> void:
 
 func _setup_input() -> void:
 	var p1 := {"move_forward": KEY_W, "move_back": KEY_S, "turn_left": KEY_A, "turn_right": KEY_D,
-		"drift": KEY_SHIFT, "boost": KEY_F, "whip": KEY_E, "recover": KEY_R, "camera": KEY_C}
+		"drift": KEY_SHIFT, "boost": KEY_F, "throw_item": KEY_E, "recover": KEY_R, "camera": KEY_C}
 	var p2 := {"move_forward": KEY_UP, "move_back": KEY_DOWN, "turn_left": KEY_LEFT, "turn_right": KEY_RIGHT,
-		"drift": KEY_PERIOD, "boost": KEY_SLASH, "whip": KEY_COMMA, "recover": KEY_BACKSPACE, "camera": KEY_ENTER}
+		"drift": KEY_PERIOD, "boost": KEY_SLASH, "throw_item": KEY_COMMA, "recover": KEY_BACKSPACE, "camera": KEY_ENTER}
 	for prefix: String in ["", "p1_", "p2_"]:
 		var bindings: Dictionary = p2 if prefix == "p2_" else p1
 		for action: String in bindings:
@@ -60,7 +60,7 @@ func _setup_input() -> void:
 			event.axis = binding[1]
 			event.axis_value = binding[2]
 			InputMap.action_add_event(prefix + binding[0], event)
-		for binding: Array in [["boost", JOY_BUTTON_A], ["drift", JOY_BUTTON_LEFT_SHOULDER], ["recover", JOY_BUTTON_Y], ["whip", JOY_BUTTON_X], ["camera", JOY_BUTTON_RIGHT_SHOULDER]]:
+		for binding: Array in [["boost", JOY_BUTTON_A], ["drift", JOY_BUTTON_LEFT_SHOULDER], ["recover", JOY_BUTTON_Y], ["throw_item", JOY_BUTTON_X], ["camera", JOY_BUTTON_RIGHT_SHOULDER]]:
 			var event := InputEventJoypadButton.new()
 			event.device = device
 			event.button_index = binding[1]
@@ -108,7 +108,7 @@ func time_text(seconds: float) -> String:
 	return "%02d:%05.2f" % [int(seconds) / 60, fmod(seconds, 60.0)]
 
 func record_section() -> String:
-	return "tour_v3_%d_%d" % [course, difficulty]
+	return "tour_v5_%d_%d" % [course, difficulty]
 
 func _write_preferences(config: ConfigFile) -> void:
 	config.set_value("audio", "muted", muted)

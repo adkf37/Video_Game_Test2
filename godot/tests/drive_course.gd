@@ -20,6 +20,9 @@ func _run() -> void:
 	var track: AlpineTrack = scene.get_node("Track")
 	for i in range(5):
 		await physics_frame
+	# Isolate road traversability. Full duels and NPC races below exercise live items.
+	race.items.set_physics_process(false)
+	race.hazards.set_physics_process(false)
 	race.start()
 	race.countdown = 0.01
 	Engine.time_scale = 4.0
