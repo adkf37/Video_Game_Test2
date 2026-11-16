@@ -18,8 +18,14 @@ var volume := DEFAULT_VOLUME
 var ui_sound: Node
 var save_error := false
 var practice_run := false
+var mobile_mode := false
+var mobile_input: Node
 
 func _ready() -> void:
+	if OS.has_feature("web"):
+		mobile_mode = bool(JavaScriptBridge.eval("new URLSearchParams(location.search).get('mobile') === '1'"))
+	if mobile_mode:
+		save_path = "user://dogsled_mobile_test_v1.cfg"
 	var config := ConfigFile.new()
 	if config.load(save_path) == OK:
 		volume = clampf(float(config.get_value("audio", "volume", DEFAULT_VOLUME)), 0.0, 1.0)
@@ -29,6 +35,15 @@ func _ready() -> void:
 		sled_style = clampi(int(config.get_value("garage", "sled_style", 0)), 0, 3)
 		for key in ["race_mode", "breed2", "sled_style2"]:
 			set(key, clampi(int(config.get_value("garage", key, get(key))), 0, 1 if key == "race_mode" else 3))
+	if mobile_mode:
+		# The mobile garage passes validated selections when loading the engine.
+		for key in ["course", "difficulty", "breed", "sled_style"]:
+			var raw = JavaScriptBridge.eval("new URLSearchParams(location.search).get('%s')" % key)
+			if raw is String and raw.is_valid_int():
+				set(key, clampi(raw.to_int(), 0, 2 if key == "difficulty" else 3))
+		race_mode = 0
+		mobile_input = preload("res://scripts/core/MobileBridge.gd").new()
+		add_child(mobile_input)
 	load_records()
 	_setup_input()
 	apply_volume()

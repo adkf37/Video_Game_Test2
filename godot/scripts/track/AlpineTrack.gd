@@ -5,6 +5,7 @@ const SAMPLES := 320
 var half_width := 8.0
 var theme := 0
 var course_name := "Alpine Valley"
+var mobile_detail := false
 var points := PackedVector3Array()
 var lengths := PackedFloat32Array()
 var total_length := 0.0
@@ -20,6 +21,7 @@ var navy := AlpineArt.material(Color("#244759"))
 
 func _ready() -> void:
 	var settings: Node = get_tree().root.get_node("GameState")
+	mobile_detail = settings.mobile_mode
 	theme = settings.course
 	half_width = RaceCatalog.WIDTHS[settings.difficulty]
 	course_name = RaceCatalog.COURSES[theme]
@@ -137,8 +139,10 @@ func _build_ribbon() -> void:
 	road.mesh = road_mesh
 	add_child(road)
 	road.create_trimesh_collision()
+	road.get_child(0).add_to_group("driveable_ground")
 	var floor_body := StaticBody3D.new()
 	add_child(floor_body)
+	floor_body.add_to_group("driveable_ground")
 	AlpineArt.box(floor_body, Vector3(0, -4, 0), Vector3(850, 1, 850), snow)
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
@@ -154,7 +158,7 @@ func _build_scenery() -> void:
 	if theme > 0:
 		BiomeDecor.build(self, theme)
 		return
-	for i in range(260):
+	for i in range(130 if mobile_detail else 260):
 		var frame := frame_at(rng.randf())
 		var side := -1.0 if rng.randf() < 0.5 else 1.0
 		var pos := frame.origin + frame.basis.x * rng.randf_range(17.0, 65.0) * side

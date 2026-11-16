@@ -84,7 +84,15 @@ try {
   await page.keyboard.press('Enter');
   await page.waitForTimeout(4500);
   await page.keyboard.down('w');
-  await page.waitForTimeout(1800);
+  await page.waitForTimeout(400);
+  await page.keyboard.down('f');
+  await page.waitForTimeout(1000);
+  await page.screenshot({path:`${artifactDir}/web-turbo-active.png`,fullPage:true});
+  await page.waitForTimeout(1100);
+  await page.screenshot({path:`${artifactDir}/web-turbo-low.png`,fullPage:true});
+  await page.keyboard.up('f');
+  await page.waitForTimeout(500);
+  await page.screenshot({path:`${artifactDir}/web-turbo-refill.png`,fullPage:true});
   await page.keyboard.up('w');
   await page.keyboard.press('c');
   await page.waitForTimeout(600);

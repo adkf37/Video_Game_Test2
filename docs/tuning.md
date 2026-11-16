@@ -19,10 +19,10 @@ Movement and contact constants live in `godot/scripts/vehicle/SledTuning.gd`. Ga
 | Maximum bump impulse | 45 m/s |
 | Impact decay | 20 m/s squared |
 | Bone targeting range / flight | 26 m / 0.55 seconds |
-| Bone chase / protection after chase | 2 / 4 seconds |
+| Bone chase / protection after chase | 1 / 4 seconds |
 | Pickup respawn / inventory capacity | 10 seconds / 1 bone |
-| Pickups per track / collection radius | 3 / 1.55 m |
-| Coconut stun / hazard immunity | 1.5 / 3 seconds |
+| Pickups per track / collection radius | 3 / 1.9375 m |
+| Obstacle delay / hazard immunity | 1 / 3 seconds |
 
 Drive momentum and impact momentum are separate so steering cannot immediately erase a hit. Both sleds receive opposite impulses; separating contacts are ignored. Finished and inactive sleds do not block the pack. Breeds and sled styles are cosmetic.
 
@@ -40,6 +40,6 @@ Run `tools/test_game.ps1` after changing handling. Automated completion proves t
 
 Golden Bone tuning lives in `scripts/core/RaceItems.gd`. Players and rivals use the same pickups; the NPC throw interval only applies when carrying an item and an eligible target is nearby.
 
-`TrackHazards.gd` owns three themed hazard stations, plus two Alpine snowballs. Crossings warn for 2 seconds and traverse for 6; cycles last 17/15.5/14 seconds by difficulty. Lollipops warn, fall for 1 second, remain down for 4 and rise for 1; their footprint stays on one side and covers 48% of road width. Coconuts mark a fixed landing point for 0.65 seconds before a 0.95-second visible arc; racers can dodge the 2 m landing radius. Stuns and movement freeze on pause; recovery/restart clear effects. Swept contacts and separation prevent driving through obstacles while protected from repeat penalties.
+`TrackHazards.gd` owns three themed hazard stations, plus two Alpine snowballs. Crossings warn for 2 seconds and traverse for 6; cycles last 17/15.5/14 seconds by difficulty. Lollipops warn, fall for 1 second, remain down for 4 and rise for 1; their footprint stays on one side and covers 48% of road width. Coconuts mark a fixed landing point for 0.65 seconds before a 0.95-second visible arc; racers can dodge the 2 m landing radius. Stuns and movement freeze on pause; recovery/restart clear effects. Swept contacts cause a one-second stop, then allow passage. An obstacle cannot retrigger until the racer exits it; there is no solid pushback. Decorative markers and scenery do not collide. Horizontal ground-mesh seams are crossed without dropping sled-to-sled collision.
 
 Score, ambience and effects are built by `tools/build_audio.py` (44.1 kHz) into checked-in Ogg files; CC0 sources are in `tools/audio_sources/` and credited in `godot/assets/audio/CREDITS.md`. The script checks that decoded peaks stay under -1 dBFS and that music loudness is sane. Each course has a melody stem and a drum stem played through `AudioStreamSynchronized`; `RaceAudio.gd` fades the drum stem in with speed (0.7 to 1.0 while racing, 0.2 in menus) and pins it at full on the final lap. Event sounds use `AudioStreamRandomizer` variants. Sled runner, drift, off-track and panting loops follow speed. All levels, curves, pitch ranges, per-group mutes and master-bus filtering live in `godot/scripts/core/AudioMix.gd`; edit a constant and rerun the game. Add group names (`music`, `drums`, `ambience`, `foley`, `rivals`, `dogs`, `sfx`, `ui`) to `MUTED_GROUPS` to A/B parts of the mix, and tune `HIGH_SHELF_DB` / `LOW_PASS_HZ` for fizz. Rivals use `AudioStreamPlayer3D` loops with a manual Doppler shift. Everything shares one limiting bus (`RaceMix`), with per-player pan buses only in duels, and a single master volume (`GameState.volume`, default 0.7 = 0 dB) on the Master bus. Solo rival estimates use distance traveled / elapsed time, with a nominal pace fallback if a rival has barely started; estimates preserve on-track order and never overwrite actual finish times.

@@ -42,7 +42,7 @@ func _run() -> void:
 	p1.global_position += Vector3.RIGHT * 2.0
 	items._physics_process(0.1)
 	check(not p1.has_bone, "passing two meters from a bone no longer collects it")
-	p1.global_position = items.pickups[0].home - Vector3.UP
+	p1.global_position = items.pickups[0].home - Vector3.UP + Vector3.RIGHT * 1.9
 	items._physics_process(0.1)
 	check(p1.has_bone and not p2.has_bone, "driving over a pickup fills only that racer's inventory")
 	check(not items.pickups[0].node.visible and items.pickups[0].wait > 9, "pickup disappears and starts respawn timer")
@@ -60,7 +60,7 @@ func _run() -> void:
 	check(items.flights.size() == 1 and p2.bone_pending, "throw has a visible projectile and reserves its target")
 	check(p2.distraction_time == 0, "distraction starts on landing, not on button press")
 	items._physics_process(0.56)
-	check(p2.distraction_time == 2.0 and p1.distraction_time == 0, "landing distracts only the target for two seconds")
+	check(p2.distraction_time == 1.0 and p1.distraction_time == 0, "landing distracts only the target for one second")
 	check(track.nearest(p2.distraction_goal).distance > track.half_width, "bone lands off the racing trail")
 	p1.has_bone = true
 	check(items.target_for(p1) == null, "chasing dog team cannot be targeted repeatedly")
@@ -76,8 +76,8 @@ func _run() -> void:
 	await frames(12)
 	check(p2.distraction_time == remaining and items.pickups[0].wait == respawn, "pause freezes chase and pickup timers")
 	race.resume()
-	await frames(100)
-	check(p2.distraction_time == 0 and p2.bone_immunity > 0, "control returns after two seconds with protection remaining")
+	await frames(30)
+	check(p2.distraction_time == 0 and p2.bone_immunity > 0, "control returns after one second with protection remaining")
 	p2.set_physics_process(false)
 	p1.global_position = Vector3(500, 0, 500)
 	items._physics_process(11)
@@ -105,7 +105,7 @@ func _run() -> void:
 	npc.distract(roadside.origin - roadside.basis.z * 5)
 	npc.set_physics_process(true)
 	await frames(10)
-	check(npc.distraction_time > 1.7 and npc.recovery_count == recoveries, "NPC stuck recovery cannot cancel an active bone chase")
+	check(npc.distraction_time > 0.7 and npc.recovery_count == recoveries, "NPC stuck recovery cannot cancel an active bone chase")
 	scene.queue_free()
 	await process_frame
 	print("ITEM RESULT: %d checks, %d failures" % [checks, failures])

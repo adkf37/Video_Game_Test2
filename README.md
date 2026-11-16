@@ -16,6 +16,8 @@ The launcher checks PATH and Downloads; supply `-GodotPath 'C:\path\to\Godot.exe
 
 **[Play in your browser](https://dogsledkart.cloud.run).** For Cloud Run setup, exports and updates, see [web deployment](docs/web-deployment.md).
 
+**[Phone version](https://dogsledkart.cloud.run/mobile):** All four tracks, three difficulties, four dog breeds and four sleds. Hold your phone sideways and use the touch arrows. Acceleration is automatic; buttons cover boost, brake/reverse, drift and throwing a Golden Bone. Pause offers musher view, recovery, volume and sound. Tilt is disabled. Mobile settings and records are separate from desktop; shared-keyboard split-screen is on the desktop page. See [mobile testing](docs/mobile-testing.md).
+
 ## Tracks and garage
 
 - **Alpine Valley:** snow trails, pines, cabins, a frozen lake and animated polar bears and arctic foxes.
@@ -50,11 +52,13 @@ Each breed has its own anatomy, coat, ears, muzzle and animated team layout. Chi
 
 **Space is unassigned to racing controls.** Solo mode also accepts arrows. M mutes and **-** / **+** change the volume. See [full controls and gamepad mappings](docs/controls.md).
 
+The turbo meter shows the percentage of boost remaining. Hold F (Player 2: slash) to use turbo; release it to refill. Amber means 25% or less remains.
+
 Musher view puts the dogs directly ahead. The throne's driver stands on a front platform. Each split-screen player switches views independently; Player 1 uses the top screen and Player 2 the bottom.
 
-Sleds physically bounce apart when they collide. Collect one of just **three Golden Bones** per track, then throw it near an opponent to lure their dogs off-track for two seconds. Aim carefully: the pickup radius is 1.55 m. Each racer holds one item; pickups respawn, and distracted teams get protection against repeated hits. NPCs collect and throw bones too.
+Sleds physically bounce apart when they collide. Collect one of just **three Golden Bones** per track, then throw it near an opponent to lure their dogs off-track for one second. Aim carefully: the pickup radius is 1.9375 m. Each racer holds one item; pickups respawn, and distracted teams get protection against repeated hits. NPCs collect and throw bones too.
 
-Watch the roadside warning signs: bears and buses cross the trail, lemurs lob coconuts (a hit stops your team for 1.5 seconds), and falling lollipops block less than half the road. Alpine Valley also has rolling snowballs. Coconut landing rings show where to dodge. Hazards affect NPCs too, and they consider obstacles when choosing a lane.
+Watch the roadside warning signs: bears and buses cross the trail, lemurs lob coconuts (a hit stops your team for one second), and falling lollipops cover less than half the road. All obstacle hits pause the team for one second, then allow it to drive through without backing up. Alpine Valley also has rolling snowballs. Coconut landing rings show where to dodge. Hazards affect NPCs too, and they consider obstacles when choosing a lane.
 
 Each track has an original looping score: a melody stem with bass and chords, plus a synchronised drum stem that swells with speed, boosting and the final lap, over a per-biome ambience bed. Effects have several variants and slight pitch shifts so they do not repeat. Crashes and coconuts layer CC0 impacts; menu clicks and dog barks and howls are CC0 recordings (see [credits](godot/assets/audio/CREDITS.md)). Your sled has quiet speed-reactive runner, drift-scrape and off-track crunch loops, and your dogs pant, bark, yip and howl, with pitch by breed and bigger choruses for bigger teams. Rivals are positional: their runners, boosts, bumps and throws pan and fade with distance. In two-player races each player's own sounds sit on their side of the stereo field. M mutes everything and **-** / **+** step the single shared volume in 10% increments; it is saved with your other preferences.
 

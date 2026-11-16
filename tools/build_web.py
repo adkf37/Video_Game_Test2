@@ -23,6 +23,7 @@ for name in ["Dockerfile", "nginx.conf"]:
 for name in ["index.html", "site.css", "site.js", "favicon.svg"]:
     shutil.copy2(root / "web" / name, public / name)
 shutil.copy2(root / "artifacts/update-split-screen.png", public / "preview.png")
+shutil.copytree(root / "web/mobile", public / "mobile")
 for command in [
     [args.godot, "--headless", "--path", str(root / "godot"), "--editor", "--import", "--quit"],
     [args.godot, "--headless", "--path", str(root / "godot"), "--export-release", "Web", str(game / "index.html")]
@@ -35,6 +36,9 @@ for command in [
 required = ["index.html", "index.js", "index.wasm", "index.pck"]
 if not all((game / name).exists() for name in required):
     raise RuntimeError("Export is missing required files")
+shutil.copy2(root / "web/mobile-engine.js", game / "mobile-engine.js")
+entry = game / "index.html"
+entry.write_text(entry.read_text(encoding="utf-8").replace("<head>", '<head>\n<script src="mobile-engine.js"></script>', 1), encoding="utf-8")
 download_size = 0
 for path in public.rglob("*"):
     if not path.is_file(): continue

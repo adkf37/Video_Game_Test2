@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#001F3F">
+<meta name="robots" content="noindex,nofollow">
+<title>Dogsled Kart · Mobile</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/mobile/mobile.css">
+</head>
+<body>
+<main id="camp">
+  <header><a class="brand" href="/">DOGSLED<br>KART<span aria-hidden="true">✳</span></a><span class="edition">PLAY ON YOUR PHONE</span></header>
+  <div class="camp-grid">
+    <section class="intro">
+      <p class="eyebrow">FOUR TRACKS · THREE RIVALS</p>
+      <h1>Dogsled racing.<br><em>Just for fun.</em></h1>
+      <p class="lede">Pick some dogs, choose a sled, and race. The tracks go from snowy trails to city streets, with a few things in the way.</p>
+      <figure><img src="/mobile/alpine.png" alt="A team of dogs racing along the snowy Alpine trail" width="1280" height="720"><figcaption>Alpine Valley. Watch out for the bears.</figcaption></figure>
+    </section>
+    <section class="setup" aria-label="Mobile race setup">
+      <p class="step">SET UP YOUR RACE</p>
+      <div class="garage">
+        <label>Track<select id="course"><option value="0">Alpine Valley</option><option value="1">Jungle Rush</option><option value="2">Candy Kingdom</option><option value="3">City Sprint</option></select></label>
+        <label>Difficulty<select id="difficulty"><option value="0">Easy</option><option value="1">Medium</option><option value="2">Hard</option></select></label>
+        <label>Dogs<select id="breed"><option value="0">4 huskies</option><option value="1">8 corgis</option><option value="2">2 mastiffs</option><option value="3">12 Chihuahuas</option></select></label>
+        <label>Sled<select id="sled_style"><option value="0">Standard wood</option><option value="1">Carbon racer</option><option value="2">Chocolate</option><option value="3">King's throne</option></select></label>
+      </div>
+      <div class="how"><span>HOW TO PLAY</span><p>Turn your phone sideways. Hold the <b>arrows</b> to steer; the dogs run automatically. Hold <b>Turbo</b> for speed, <b>Drift</b> through turns, or <b>Brake</b> to slow down and reverse. Collect a <b>Bone</b> and throw it to distract a nearby rival.</p></div>
+      <button id="launch" class="primary" disabled>Preparing the trail…</button>
+      <p id="download" class="fine">Checking the download…</p>
+      <p class="fine muted">A phone version of the same game. For two players sharing a keyboard, <a href="/">Play the desktop version ↗</a></p>
+    </section>
+  </div>
+</main>
+
+<section id="play" hidden aria-label="Dogsled Kart mobile race">
+  <iframe id="game" title="Dogsled Kart race" allow="autoplay; fullscreen" tabindex="-1"></iframe>
+  <div id="race-hud" hidden>
+    <div class="race-top">
+      <div class="race-stat"><strong id="place">1 / 4</strong><span id="lap">LAP 1 / 3</span></div>
+      <div class="race-clock"><strong id="time">00:00.00</strong><span><b id="speed">0</b> KM/H</span></div>
+      <button id="pause" class="icon-button" aria-label="Pause race">Ⅱ</button>
+    </div>
+    <div id="toast" role="status"></div>
+    <div id="countdown" aria-live="polite"></div>
+    <div class="driving-controls">
+      <div id="touch-pad" role="group" aria-label="Steering">
+        <button id="left" class="steer-button" aria-label="Steer left">‹</button>
+        <button id="right" class="steer-button" aria-label="Steer right">›</button>
+      </div>
+
+      <div class="actions">
+        <div class="handling"><button id="drift" class="handling-button">DRIFT</button><button id="brake" class="handling-button">BRAKE</button></div>
+        <button id="bone" class="action bone" disabled><span aria-hidden="true">🦴</span><b>BONE</b><small id="bone-note">Find one</small></button>
+        <button id="boost" class="action boost"><span aria-hidden="true">»</span><b>TURBO</b><small id="turbo-left">100% left</small><progress id="energy" max="100" value="100" aria-label="Turbo remaining"></progress></button>
+      </div>
+    </div>
+  </div>
+
+  <section id="loading" class="overlay" aria-live="polite"><div class="sheet loading-sheet"><p class="eyebrow">THE PACK IS GETTING READY</p><h2 id="loading-title">Harnessing the dogs…</h2><p id="loading-copy">The first load takes a little longer. Your race won’t start without you.</p><div class="loading-line"></div><button class="secondary leave">Back to basecamp</button></div></section>
+
+  <section id="ready" class="overlay" hidden><div class="sheet compact"><p id="race-label" class="eyebrow"></p><h2>Ready to race?</h2><p id="ready-copy">Hold the arrows to steer. The dogs run automatically.</p><p id="record" class="fine"></p><button id="start" class="primary">Start race →</button><button class="text-button leave">Back to basecamp</button></div></section>
+
+  <section id="paused" class="overlay" hidden aria-label="Race paused"><div class="sheet pause-sheet">
+    <div class="pause-heading"><h2>Race paused.</h2><button id="resume" class="primary">Resume →</button></div>
+    <p id="pause-note" class="note" role="status">Your race is paused.</p>
+    <div class="pause-grid">
+      <button id="camera" class="secondary">Musher view</button>
+      <div class="volume-controls" aria-label="Volume"><button id="quieter" class="secondary" aria-label="Lower volume">−</button><output id="volume">70%</output><button id="louder" class="secondary" aria-label="Raise volume">+</button></div>
+      <button id="recover" class="secondary">Back on track (+3s)</button><button id="mute" class="secondary">Sound on</button>
+    </div>
+    <button class="text-button leave">Leave race</button>
+  </div></section>
+
+  <section id="finished" class="overlay" hidden><div class="sheet results-sheet"><p class="eyebrow">TRAIL COMPLETE</p><h2>Race results.</h2><p class="finish-time" id="finish-time"></p><ol id="results"></ol><p class="fine">“est.” means a rival’s projected finish time.</p><div class="result-buttons"><button id="again" class="primary">Race again →</button><button class="secondary leave">Basecamp</button></div></div></section>
+
+  <section id="rotate" class="overlay rotate" hidden><div class="sheet compact"><div class="phone-turn" aria-hidden="true">▯ ↻ ▱</div><h2>Turn your phone sideways.</h2><p>Hold your phone sideways to race.<br>We’ll keep the dogs here until you’re ready.</p><button class="text-button leave">Back to basecamp</button></div></section>
+</section>
+<script type="module" src="/mobile/mobile.js"></script>
+</body>
+</html>

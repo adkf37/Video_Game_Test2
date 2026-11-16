@@ -16,6 +16,8 @@ var timer_label: Label
 var lap_label: Label
 var speed_label: Label
 var boost_bar: ProgressBar
+var boost_label: Label
+var boost_hint: Label
 var status_label: Label
 var item_label: Label
 var best_label: Label
@@ -38,6 +40,10 @@ var again_button: Button
 @onready var sled: Node3D = get_parent().get_node("PlayerSled")
 
 func _ready() -> void:
+	if GameState.mobile_mode:
+		visible = false
+		set_process(false)
+		return
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	root = Control.new()
 	add_child(root)
@@ -187,17 +193,12 @@ func _build_race() -> void:
 	_panel(race_panel, Vector2(980, 28), Vector2(270, 114), Color(0.055, 0.15, 0.19, 0.88))
 	_label(race_panel, "TRAIL TIME", Vector2(1002, 38), 13, CORAL)
 	timer_label = _label(race_panel, "00:00.00", Vector2(999, 65), 36)
-	_panel(race_panel, Vector2(30, 560), Vector2(270, 128), Color(0.055, 0.15, 0.19, 0.88))
-	speed_label = _label(race_panel, "0", Vector2(50, 561), 46)
-	_label(race_panel, "KM/H", Vector2(159, 585), 13, MUTED)
-	_label(race_panel, "MUSH", Vector2(50, 638), 12, CORAL)
-	boost_bar = ProgressBar.new()
-	race_panel.add_child(boost_bar)
-	boost_bar.position = Vector2(113, 649)
-	boost_bar.size = Vector2(163, 9)
-	boost_bar.show_percentage = false
-	boost_bar.add_theme_stylebox_override("background", _style(Color("#3b5f6c"), 4))
-	boost_bar.add_theme_stylebox_override("fill", _style(CORAL, 4))
+	_panel(race_panel, Vector2(30, 550), Vector2(290, 138), Color(0.055, 0.15, 0.19, 0.95))
+	speed_label = _label(race_panel, "0", Vector2(50, 550), 42)
+	_label(race_panel, "KM/H", Vector2(159, 570), 13, MUTED)
+	boost_label = _label(race_panel, "TURBO LEFT  100%", Vector2(50, 604), 17, CREAM, Vector2(255, 28))
+	boost_bar = _boost_meter(race_panel, Vector2(50, 635), Vector2(250, 17))
+	boost_hint = _label(race_panel, "HOLD F / Release to refill", Vector2(50, 657), 12, MUTED, Vector2(255, 24))
 	item_label = _label(race_panel, "COLLECT A GOLDEN BONE", Vector2(350, 620), 16, INK, Vector2(580, 38))
 	item_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	status_label = _label(race_panel, "", Vector2(350, 555), 17, INK, Vector2(580, 38))
@@ -312,7 +313,7 @@ func _process(delta: float) -> void:
 	timer_label.text = GameState.time_text(manager.race_time)
 	lap_label.text = "LAP  %d / 3" % mini(manager.current_lap + 1, 3)
 	speed_label.text = "%d" % roundi(sled.get_speed_kph())
-	boost_bar.value = sled.boost_energy
+	_update_boost(boost_bar, boost_label, boost_hint, sled, "F")
 	item_label.text = sled.item_hint()
 	countdown_label.text = str(clampi(ceili(manager.countdown), 1, 3)) if manager.state == manager.RaceState.COUNTDOWN else ""
 	audio_label.text = ("M  /  SOUND OFF" if GameState.muted else "M  /  SOUND ON") + "     -  +  /  VOLUME %d%%" % roundi(GameState.volume * 100)
@@ -328,7 +329,7 @@ func _process(delta: float) -> void:
 		elif sled.offroad:
 			status_label.text = "FIRST CUT  /  light slowdown" if sled.offroad_cut == 1 else "SECOND CUT  /  deep slowdown"
 		elif sled.boosting:
-			status_label.text = "MUSH!"
+			status_label.text = "TURBO ON"
 		elif sled.drifting:
 			status_label.text = "CARVING"
 
@@ -349,21 +350,18 @@ func _build_split() -> void:
 		_panel(split_panel, Vector2(1040, y + 14), Vector2(222, 90), Color(0.055, 0.15, 0.19, 0.88))
 		var time := _label(split_panel, "", Vector2(1057, y + 25), 27, CREAM, Vector2(205, 40))
 		var view := _label(split_panel, "", Vector2(1057, y + 66), 13, color, Vector2(205, 30))
-		_panel(split_panel, Vector2(18, y + 271), Vector2(270, 73), Color(0.055, 0.15, 0.19, 0.88))
-		var speed := _label(split_panel, "", Vector2(35, y + 279), 23, CREAM, Vector2(250, 34))
-		var boost := ProgressBar.new()
-		split_panel.add_child(boost)
-		boost.position = Vector2(35, y + 320)
-		boost.size = Vector2(235, 9)
-		boost.show_percentage = false
-		boost.add_theme_stylebox_override("fill", _style(color, 3))
+		_panel(split_panel, Vector2(18, y + 245), Vector2(285, 103), Color(0.055, 0.15, 0.19, 0.95))
+		var speed := _label(split_panel, "", Vector2(35, y + 249), 23, CREAM, Vector2(250, 31))
+		var energy := _label(split_panel, "", Vector2(35, y + 280), 15, CREAM, Vector2(255, 24))
+		var boost := _boost_meter(split_panel, Vector2(35, y + 309), Vector2(250, 14))
+		var hint := _label(split_panel, "", Vector2(35, y + 326), 11, MUTED, Vector2(255, 22))
 		var status := _label(split_panel, "", Vector2(320, y + 291), 16, INK, Vector2(620, 28))
 		status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var controls := "WASD / F boost / SHIFT drift / E throw bone / R recover / C view" if i == 0 else "ARROWS / SLASH boost / PERIOD drift / COMMA bone / BACKSPACE recover / ENTER view"
 		_label(split_panel, controls, Vector2(320, y + 327), 12, INK, Vector2(930, 25))
 		var message := _label(split_panel, "", Vector2(290, y + 113), 52, INK, Vector2(700, 100))
 		message.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		split_readouts.append({"lap": lap, "time": time, "view": view, "speed": speed, "boost": boost, "status": status, "message": message})
+		split_readouts.append({"lap": lap, "time": time, "view": view, "speed": speed, "boost": boost, "energy": energy, "hint": hint, "status": status, "message": message})
 
 func _update_split() -> void:
 	for i in range(manager.players.size()):
@@ -373,8 +371,8 @@ func _update_split() -> void:
 		fields.lap.text = "%d / 4    LAP %d / 3" % [manager.player_position(i), mini(manager.player_trackers[i].current_lap + 1, 3)]
 		fields.time.text = GameState.time_text(manager.player_times[i])
 		fields.view.text = "MUSHER VIEW" if GameState.camera_modes[i] == 1 else "CHASE VIEW"
-		fields.speed.text = "%d KM/H    MUSH" % roundi(player.get_speed_kph())
-		fields.boost.value = player.boost_energy
+		fields.speed.text = "%d KM/H" % roundi(player.get_speed_kph())
+		_update_boost(fields.boost, fields.energy, fields.hint, player, "F" if i == 0 else "SLASH")
 		fields.status.text = player.item_hint()
 		if player.offroad:
 			fields.status.text += "  /  " + ("FIRST CUT" if player.offroad_cut == 1 else "SECOND CUT")
@@ -384,4 +382,40 @@ func _update_split() -> void:
 func menu_controls_text() -> String:
 	if GameState.race_mode == 1:
 		return "P1  WASD / F boost / SHIFT drift\nE bone / R recover / C view\nESC pauses both / M sound"
-	return "SOLO RACE / three computer rivals\nCollect a bone, then press E to throw.\nDistract a rival's dogs for 2 seconds."
+	return "SOLO RACE / three computer rivals\nCollect a bone, then press E to throw.\nDistract a rival's dogs for 1 second."
+
+func _boost_meter(parent: Control, pos: Vector2, dimensions: Vector2) -> ProgressBar:
+	var bar := ProgressBar.new()
+	parent.add_child(bar)
+	bar.position = pos
+	bar.show_percentage = false
+	for part in ["background", "fill"]:
+		var style := StyleBoxFlat.new()
+		style.bg_color = Color("#071e2a") if part == "background" else Color("#59d6ee")
+		style.set_corner_radius_all(3)
+		style.content_margin_left = 0
+		style.content_margin_right = 0
+		style.content_margin_top = 0
+		style.content_margin_bottom = 0
+		bar.add_theme_stylebox_override(part, style)
+	# Set size after hiding the built-in percentage so its font cannot enlarge it.
+	bar.size = dimensions
+	return bar
+
+func _update_boost(bar: ProgressBar, label: Label, hint: Label, player: Node, key: String) -> void:
+	var remaining := roundi(player.boost_energy)
+	bar.value = player.boost_energy
+	label.text = "TURBO LEFT  %d%%" % remaining
+	var color := Color("#ffc857") if remaining <= 25 else Color("#59d6ee")
+	bar.get_theme_stylebox("fill").bg_color = color
+	label.add_theme_color_override("font_color", color)
+	if player.boosting:
+		hint.text = "USING TURBO / Release to refill"
+	elif player.boost_latched:
+		hint.text = "RELEASE %s / Refill turbo" % key
+	elif player.offroad:
+		hint.text = "Return to the track to use turbo"
+	elif remaining < 100:
+		hint.text = "REFILLING / Hold %s for turbo" % key
+	else:
+		hint.text = "HOLD %s / Release to refill" % key

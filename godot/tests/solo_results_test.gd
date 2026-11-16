@@ -22,7 +22,13 @@ func _run() -> void:
 		race.state = race.RaceState.RACING
 		for racer in get_nodes_in_group("racers"):
 			racer.set_physics_process(false)
-		check(is_equal_approx(race.rivals[1].cruise_throttle, RaceCatalog.NPC_PACE[difficulty] * 1.25), "NPC target pace raised by 25%% at difficulty %d" % difficulty)
+		var paces: Array = race.rivals.map(func(rival): return rival.cruise_throttle)
+		paces.sort()
+		check(is_equal_approx(paces[1], RaceCatalog.NPC_PACE[difficulty] * 1.25) and paces[0] < paces[1] and paces[1] < paces[2], "shuffled field retains difficulty and distinct paces")
+		var favorite: int = race.previous_favorite
+		race.start()
+		check(race.previous_favorite != favorite, "rematch gives a different NPC the strongest pace")
+		race.state = race.RaceState.RACING
 		race.elapsed_time = 100
 		race.player_times[0] = 103
 		var winner: Node = race.rivals[0]

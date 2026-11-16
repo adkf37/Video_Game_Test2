@@ -1,7 +1,8 @@
 extends Node3D
 ## Shared pickups and visible throws. One inventory slot per racer, no free attacks.
 const RANGE := 26.0
-const CHASE_SECONDS := 2.0
+const PICKUP_RADIUS := 1.55 * 1.25
+const CHASE_SECONDS := 1.0
 const PROTECTION_SECONDS := 4.0
 const FLIGHT_SECONDS := 0.55
 const RESPAWN_SECONDS := 10.0
@@ -113,12 +114,12 @@ func _physics_process(delta: float) -> void:
 			if absf(offset.y) > 2.5:
 				continue
 			offset.y = 0
-			if offset.length() <= 1.55:
+			if offset.length() <= PICKUP_RADIUS:
 				racer.has_bone = true
 				pickup.wait = RESPAWN_SECONDS
 				pickup.node.visible = false
 				if racer.is_player:
-					manager.announcement.emit("GOLDEN BONE! / " + ("E" if racer.player_index == 0 else "COMMA") + " TO THROW")
+					manager.announcement.emit("GOLDEN BONE! / " + ("TAP BONE" if GameState.mobile_mode else ("E" if racer.player_index == 0 else "COMMA")) + " TO THROW")
 					manager.get_parent().get_node("RaceAudio").event("pickup", racer.player_index)
 				break
 	for i in range(flights.size() - 1, -1, -1):

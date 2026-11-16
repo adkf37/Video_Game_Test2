@@ -58,12 +58,33 @@ func _run() -> void:
 			p1.position = frame * Vector3(hazard.lane, 0.5, 0)
 			p1.current_speed = 30
 			hazards.previous_positions[p1] = frame * Vector3(hazard.lane, 0.5, 5)
-			check(hazards._contact(hazard, p1) and p1.current_speed < 15, "obstacle blocks and slows player")
+			check(hazards._contact(hazard, p1) and p1.current_speed == 0 and p1.hazard_time == 1.0, "obstacle gives exactly a one-second stop")
 			var hit_count: int = p1.hazard_hits
 			p1.position = frame * Vector3(hazard.lane, 0.5, 0)
 			hazards._contact(hazard, p1)
-			check(p1.hazard_hits == hit_count and p1.position.distance_to(frame.origin + frame.basis.x * hazard.lane) > 1,
-				"immunity prevents repeat damage without allowing passage through obstacle")
+			check(p1.hazard_hits == hit_count and p1.position.is_equal_approx(frame * Vector3(hazard.lane, 0.5, 0)),
+				"continued contact never pushes the sled backward")
+			p1.hazard_immunity = 0
+			p1.hazard_time = 0
+			hazards._contact(hazard, p1)
+			check(p1.hazard_hits == hit_count, "staying inside an obstacle never starts another delay after immunity expires")
+			p1.position = frame * Vector3(hazard.lane, 0.5, -10)
+			hazards.previous_positions[p1] = p1.position
+			hazards._contact(hazard, p1)
+			p1.position = frame * Vector3(hazard.lane, 0.5, 0)
+			hazards.previous_positions[p1] = p1.position
+			check(hazards._contact(hazard, p1) and p1.hazard_hits == hit_count + 1, "a later separate crossing can trigger a new delay")
+			p1.set_physics_process(true)
+			Input.action_press("p1_move_forward")
+			var stopped_at: Vector3 = p1.position
+			await frames(30)
+			check(p1.hazard_time > 0.4 and p1.current_speed == 0, "crossing obstacle holds the team during its one-second delay")
+			for step in range(95):
+				await physics_frame
+				hazards._contact(hazard, p1)
+			check(p1.hazard_time == 0 and (p1.position - stopped_at).dot(-frame.basis.z) > 3, "holding forward clears the obstacle without backing up")
+			Input.action_release("p1_move_forward")
+			p1.set_physics_process(false)
 			p2.reset_to(frame)
 			p2.position = frame * Vector3(-signf(hazard.lane + 0.01) * track.half_width * 0.8, 0.5, 0)
 			hazards.previous_positions[p2] = p2.position
@@ -79,10 +100,10 @@ func _run() -> void:
 			p1.position = coconut.end + Vector3.UP * 0.5
 			p2.position = coconut.end + Vector3(5, 0.5, 0)
 			hazards._update_coconuts(1.61)
-			check(p1.hazard_time == 1.5 and p2.hazard_time == 0, "coconut hits only its landing area for 1.5 seconds")
+			check(p1.hazard_time == 1.0 and p2.hazard_time == 0, "coconut hits only its landing area for one second")
 			p1.set_physics_process(true)
 			await frames(30)
-			check(p1.hazard_time > 0.9 and p1.current_speed == 0, "coconut actually stops the team")
+			check(p1.hazard_time > 0.4 and p1.current_speed == 0, "coconut actually stops the team")
 			race.resume_state = race.RaceState.RACING
 			race.state = race.RaceState.PAUSED
 			paused = true
@@ -91,7 +112,7 @@ func _run() -> void:
 			check(p1.hazard_time == timer, "pause freezes coconut stun")
 			race.resume()
 			await frames(65)
-			check(p1.hazard_time == 0 and p1.hazard_immunity > 0, "control returns after 1.5 seconds with protection")
+			check(p1.hazard_time == 0 and p1.hazard_immunity > 0, "control returns after one second with protection")
 			p1.set_physics_process(false)
 		var events: int = sound.effect_count
 		sound.cooldowns.clear()

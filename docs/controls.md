@@ -20,9 +20,9 @@ Gamepads use left stick steering, RT throttle, LT brake, A boost, LB drift, X th
 
 Boost only works on the trail. Releasing boost recharges it; after running empty, release and press again. Drift preserves sideways momentum, so enter corners early and release to regain grip.
 
-Collect a glowing Golden Bone on the trail, then press E (Player 1 / solo) or comma (Player 2) to throw it near the closest eligible opponent within 26 m. The HUD names the target. The bone lands off-track and lures that team for two seconds before their controls return. Targets get four more seconds of protection. You hold one bone at a time; pickups respawn after ten seconds. Throws without a nearby target keep the bone. NPCs collect and throw the same items. Sled contact still causes a physical bounce.
+Collect a glowing Golden Bone on the trail, then press E (Player 1 / solo) or comma (Player 2) to throw it near the closest eligible opponent within 26 m. The HUD names the target. The bone lands off-track and lures that team for one second before their controls return. Targets get four more seconds of protection. You hold one bone at a time; pickups respawn after ten seconds. Throws without a nearby target keep the bone. NPCs collect and throw the same items. Sled contact still causes a physical bounce.
 
-There are only three bones per track; drive within 1.55 m to collect one. Watch the signs for crossing bears, buses, rolling snowballs and falling candy. Lollipops leave at least half the road clear. Move away from the orange coconut landing ring: a direct hit stops your dogs for 1.5 seconds. Hazards affect every racer and freeze when paused. Music plays throughout; M mutes all sound and -/+ change the volume.
+There are only three bones per track; drive within 1.9375 m to collect one. Watch the signs for crossing bears, buses, rolling snowballs and falling candy. Lollipops leave at least half the road clear. Move away from the orange coconut landing ring: a direct hit stops your dogs for one second. Hazards affect every racer and freeze when paused. Music plays throughout; M mutes all sound and -/+ change the volume.
 
 The first forward finish-line crossing arms lap tracking. Complete the route and cross forward again to earn a lap. Missed markers never require turning back.
 

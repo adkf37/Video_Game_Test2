@@ -86,6 +86,7 @@ func reset() -> void:
 		coconut.marker.queue_free()
 	coconuts.clear()
 	for hazard in hazards:
+		hazard["contacts"] = {}
 		hazard.wait = 3.0 + hazard.phase
 		_update_hazard(hazard, false)
 
@@ -155,6 +156,8 @@ func _update_hazard(hazard: Dictionary, running: bool) -> void:
 			actor.position.y += 1.2
 			actor.rotation.z = elapsed * 2
 		hazard.active = running and cycle >= WARNING_SECONDS and cycle < 8
+	if not hazard.active:
+		hazard["contacts"] = {}
 	hazard.sign.get_child(1).modulate = Color("#ff6947") if (hazard.warning or hazard.active) and sin(elapsed * 8) > 0 else Color("#ffca70")
 
 func _contact(hazard: Dictionary, racer: CharacterBody3D) -> bool:
@@ -173,30 +176,18 @@ func _contact(hazard: Dictionary, racer: CharacterBody3D) -> bool:
 		if absf(point.y) < 4 and absf(point.x - center.x) < extent.x and absf(point.z) < extent.y:
 			hit = true
 			break
+	# One contact per crossing. Never move the sled back out of the obstacle:
+	# after the brief delay it can drive through, even if the actor stays put.
+	var contacts: Dictionary = hazard.get("contacts", {})
+	hazard["contacts"] = contacts
+	var id := racer.get_instance_id()
 	if not hit:
+		contacts.erase(id)
 		return false
-	var normal := Vector3.ZERO
-	var x_penetration := extent.x - absf(local.x - center.x)
-	var z_penetration := extent.y - absf(local.z)
-	if x_penetration < z_penetration:
-		var side := signf(local.x - center.x)
-		if side == 0:
-			side = -hazard.side
-		local.x = center.x + side * (extent.x + 0.05)
-		normal = frame.basis.x * side
-	else:
-		var side := signf(from.z)
-		if side == 0:
-			side = 1
-		local.z = side * (extent.y + 0.05)
-		normal = frame.basis.z * side
-	racer.global_position = frame * local
-	racer.hit_hazard(hazard.kind, normal * 8)
-	# Immunity prevents repeat penalties, but never permits driving through a bus.
-	var closing: float = racer.drive_velocity.dot(normal)
-	if closing < 0:
-		racer.drive_velocity -= normal * closing
-	return true
+	if contacts.get(id, -1) == racer.item_generation:
+		return false
+	contacts[id] = racer.item_generation
+	return racer.hit_hazard(hazard.kind)
 
 func _try_coconut(hazard: Dictionary) -> void:
 	var target: CharacterBody3D

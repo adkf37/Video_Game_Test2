@@ -30,6 +30,7 @@ var finish_order: Array[Node] = []
 var finish_times: Dictionary = {}
 var elapsed_time := 0.0
 var player_finish_place := 0
+var previous_favorite := -1
 @onready var lap_tracker: Node = $LapTracker
 @onready var sled: CharacterBody3D = get_parent().get_node("PlayerSled")
 @onready var track: Node3D = get_parent().get_node("Track")
@@ -65,7 +66,6 @@ func _setup_grid() -> void:
 		rival.team_color = colors[i]
 		rival.grid_index = i
 		rival.lane = (i - (3 - players.size()) * 0.5) * track.half_width * 0.5
-		rival.cruise_throttle = (RaceCatalog.NPC_PACE[GameState.difficulty] + (i - 1) * 0.025) * RaceCatalog.CHALLENGE_MULTIPLIER
 		rival.get_node("DogTeam").breed = (i + 1) % 4
 		rival.get_node("DogTeam").sled_style = (i + 1) % 4
 		rival.get_node("DogTeam").team_color = colors[i]
@@ -107,7 +107,22 @@ func _place_at_start() -> void:
 	for rival in rivals:
 		rival.reset_race()
 
+func _vary_rivals() -> void:
+	# Shuffle the same pace range; a fresh favorite on each rematch.
+	var ranks: Array = range(rivals.size())
+	ranks.shuffle()
+	if ranks.find(ranks.size() - 1) == previous_favorite:
+		var other := (previous_favorite + randi_range(1, ranks.size() - 1)) % ranks.size()
+		var swap: int = ranks[other]
+		ranks[other] = ranks[previous_favorite]
+		ranks[previous_favorite] = swap
+	previous_favorite = ranks.find(ranks.size() - 1)
+	for i in range(rivals.size()):
+		rivals[i].pace_rank = ranks[i]
+		rivals[i].cruise_throttle = (RaceCatalog.NPC_PACE[GameState.difficulty] + (ranks[i] - (rivals.size() - 1) * 0.5) * 0.025) * RaceCatalog.CHALLENGE_MULTIPLIER
+
 func start() -> void:
+	_vary_rivals()
 	get_tree().paused = false
 	state = RaceState.COUNTDOWN
 	countdown = 3.5

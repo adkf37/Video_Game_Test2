@@ -4,47 +4,47 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
-<meta name="theme-color" content="#143843">
-<title>Dogsled Kart &mdash; The Great Dogsled Tour</title>
+<meta name="theme-color" content="#001F3F">
+<title>Dogsled Kart - A just-for-fun racing game</title>
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="site.css">
 </head>
 <body>
 <header class="masthead">
 <a class="brand" href="./" aria-label="Dogsled Kart home"><svg viewBox="0 0 44 44" aria-hidden="true"><ellipse cx="22" cy="29" rx="12" ry="10"/><ellipse cx="8" cy="16" rx="5" ry="7" transform="rotate(-24 8 16)"/><ellipse cx="19" cy="9" rx="5" ry="7"/><ellipse cx="31" cy="10" rx="5" ry="7" transform="rotate(16 31 10)"/><ellipse cx="39" cy="20" rx="4" ry="6" transform="rotate(25 39 20)"/></svg><span>DOGSLED<br>KART</span></a>
-<div class="edition">THE GREAT DOGSLED TOUR <span>Browser playtest / 01</span></div>
+<div class="edition">A JUST-FOR-FUN RACING GAME <span>Play in your browser</span></div>
 <button class="quiet" id="help-button" aria-haspopup="dialog">Controls <span aria-hidden="true">&rarr;</span></button>
 </header>
 <main>
 <section class="intro" id="intro">
 <div class="intro-copy">
-<p class="eyebrow"><span class="dot"></span> FOUR TRACKS. ONE VERY GOOD PACK.</p>
-<h1>GOOD DOGS.<br><em>GREAT RACES.</em></h1>
-<p class="dek">Pick your pack, grab a sled, and take the long way home. Snow trails, jungle bends, candy kingdoms and city streets await.</p>
-<div class="launch-row"><button id="launch" class="primary">LET&rsquo;S MUSH <span aria-hidden="true">&rarr;</span></button><span class="launch-note">Play in your browser<br><span id="download-size">Preparing the trail...</span></span></div>
-<p class="device-note">Best on a desktop with a keyboard. Sound starts after you interact with the game.</p>
+<p class="eyebrow"><span class="dot"></span> FOUR TRACKS. YOUR CHOICE OF DOGS.</p>
+<h1>DOGSLED RACING.<br><em>JUST FOR FUN.</em></h1>
+<p class="dek">Pick some dogs, choose a sled, and race. Play solo against three rivals or share a keyboard with a friend. There are snowy trails, a jungle, a candy kingdom, and city streets.</p>
+<div class="launch-row"><button id="launch" class="primary">PLAY THE GAME <span aria-hidden="true">&rarr;</span></button><span class="launch-note">Play in your browser<br><span id="download-size">Preparing the trail...</span></span></div>
+<p class="device-note">Playing on a phone? <a href="/mobile">Use the mobile version &rarr;</a><br>Desktop controls use a keyboard. Sound starts when you play.</p>
 </div>
 <figure class="postcard">
 <img src="preview.png" alt="Two-player Dogsled Kart racing on City Sprint, with chase and musher views." width="1280" height="720">
-<figcaption><span>BRING A FRIEND.<br>OR RACE THE PACK.</span><span class="stamp">LOCAL<br>2 PLAYER<br>&#9733;</span></figcaption>
+<figcaption><span>Two players, one keyboard.<br>Things can get crowded.</span><span class="stamp">LOCAL<br>2 PLAYER<br>&#9733;</span></figcaption>
 </figure>
 <div class="tour-strip"><span>01 / ALPINE VALLEY</span><span>02 / JUNGLE RUSH</span><span>03 / CANDY KINGDOM</span><span>04 / CITY SPRINT</span></div>
 </section>
 <section id="play-area" class="play-area" hidden aria-label="Dogsled Kart game">
-<div class="game-toolbar"><span><span class="dot"></span> YOU&rsquo;RE ON THE TRAIL</span><div><button class="quiet" id="fullscreen">Fullscreen</button><button class="quiet" id="leave">Leave game</button></div></div>
+<div class="game-toolbar"><span><span class="dot"></span> RACE IN PROGRESS</span><div><button class="quiet" id="fullscreen">Fullscreen</button><button class="quiet" id="leave">Leave game</button></div></div>
 <div id="game-frame" class="game-frame"><iframe id="game" title="Dogsled Kart game" allow="autoplay; fullscreen; gamepad"></iframe></div>
 <p class="game-hint">Click inside the game to use the keyboard. <kbd>Esc</kbd> pauses &middot; <kbd>C</kbd> switches P1 camera &middot; <kbd>Enter</kbd> switches P2 camera.</p>
 </section>
 <section class="field-notes" aria-label="Playtest notes">
-<div><span class="number">01</span><h2>Make it your team.</h2><p>Four huskies or twelve Chihuahuas? A chocolate sled or a royal throne? Choose your combination in the garage.</p></div>
+<div><span class="number">01</span><h2>Choose your team.</h2><p>Choose huskies, corgis, mastiffs, or twelve Chihuahuas. Then pick a sled. The chocolate one works about as well as you’d hope.</p></div>
 <div><span class="number">02</span><h2>Share the keyboard.</h2><p>Choose two-player mode for top-and-bottom split-screen. Player 1 gets WASD; Player 2 gets the arrows. Nobody gets the space bar.</p></div>
-<div><span class="number">03</span><h2>Keep it local.</h2><p>Your choices and records stay in this browser. This is a desktop playtest; touch controls and online multiplayer aren&rsquo;t included.</p></div>
+<div><span class="number">03</span><h2>A small experiment.</h2><p>This is a game I’m making for fun and still working on. Your choices and best times stay in this browser. You can play on a phone too; multiplayer is two people sharing a keyboard.</p></div>
 </section>
 </main>
-<footer><span>GOOD DOGS. GREAT COMPANY.</span><span id="version">DOGSLED KART / PLAYTEST</span></footer>
+<footer><span>A game by Aaron Feinstein.</span><span id="version">DOGSLED KART / PLAYTEST</span></footer>
 <dialog id="controls">
 <form method="dialog"><button class="close" aria-label="Close controls">&times;</button></form>
-<p class="eyebrow">KNOW YOUR SIDE OF THE KEYBOARD</p><h2>Ready, set, mush.</h2>
+<p class="eyebrow">KNOW YOUR SIDE OF THE KEYBOARD</p><h2>How to play.</h2>
 <table><thead><tr><th>Action</th><th>Player 1 / solo</th><th>Player 2</th></tr></thead><tbody>
 <tr><td>Drive</td><td><kbd>W A S D</kbd></td><td><kbd>Arrow keys</kbd></td></tr>
 <tr><td>Boost</td><td><kbd>F</kbd></td><td><kbd>/</kbd> slash</td></tr>

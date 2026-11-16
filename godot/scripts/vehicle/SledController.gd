@@ -23,6 +23,8 @@ var distraction_goal := Vector3.ZERO
 var item_generation := 0
 var bump_count := 0
 var bones_thrown := 0
+const HAZARD_DELAY := 1.0
+var hazard_kind := ""
 var hazard_time := 0.0
 var hazard_immunity := 0.0
 var hazard_hits := 0
@@ -138,14 +140,18 @@ func _physics_process(delta: float) -> void:
 	velocity.z = drive_velocity.z + impact_velocity.z
 	velocity.y -= SledTuning.GRAVITY * delta
 	contact_velocity = Vector3(velocity.x, 0, velocity.z)
+	var intended_position := global_position + Vector3(velocity.x, 0, velocity.z) * delta
 	move_and_slide()
+	var ground_seam := false
 	for i in range(get_slide_collision_count()):
 		var collision := get_slide_collision(i)
 		var other := collision.get_collider()
 		if other is CharacterBody3D and other.is_in_group("racers"):
 			_resolve_bump(other, collision.get_normal())
-		elif absf(collision.get_normal().y) < 0.4:
-			current_speed *= 0.8
+		elif other.is_in_group("driveable_ground") and absf(collision.get_normal().y) < 0.4:
+			ground_seam = true
+	if ground_seam:
+		_cross_ground_seam(intended_position)
 	if active and controls.get("throw_item", false):
 		try_throw()
 	var actual_speed := Vector2(get_real_velocity().x, get_real_velocity().z).length()
@@ -153,6 +159,19 @@ func _physics_process(delta: float) -> void:
 	if is_on_floor():
 		var slope := asin(clampf(forward.dot(get_floor_normal()), -0.35, 0.35))
 		visual.rotation.x = lerp_angle(visual.rotation.x, -slope, delta * 6.0)
+
+func _cross_ground_seam(intended_position: Vector3) -> void:
+	# Folded ribbon triangles can expose an internal edge as a horizontal wall.
+	# Finish only this frame's horizontal move, still colliding with other sleds.
+	var remaining := intended_position - global_position
+	remaining.y = 0
+	var mask := collision_mask
+	collision_mask = 2
+	var contact := move_and_collide(remaining)
+	collision_mask = mask
+	global_position.y = maxf(global_position.y, track.ground_height(global_position) + 0.05)
+	if contact and contact.get_collider() is CharacterBody3D and contact.get_collider().is_in_group("racers"):
+		_resolve_bump(contact.get_collider(), contact.get_normal())
 
 func _resolve_bump(other: CharacterBody3D, normal: Vector3) -> void:
 	if not can_drive() or not other.can_drive() or bump_cooldowns.has(other.get_instance_id()):
@@ -204,14 +223,14 @@ func distract(point: Vector3) -> void:
 	boosting = false
 	current_speed = minf(current_speed, 12.0)
 	if is_player:
-		race_manager.announcement.emit("GOLDEN BONE! / DOGS DISTRACTED FOR 2s")
+		race_manager.announcement.emit("GOLDEN BONE! / DOGS DISTRACTED FOR 1s")
 
 func try_throw() -> bool:
 	return race_manager.items.throw_bone(self) if race_manager.items else false
 
 func item_hint() -> String:
 	if hazard_time > 0:
-		return "COCONUT BONK / %.1fs" % hazard_time
+		return "%s / %.1fs" % [hazard_kind.to_upper(), hazard_time]
 	if distraction_time > 0:
 		return "CHASING BONE / %.1fs" % distraction_time
 	if not has_bone:
@@ -226,26 +245,25 @@ func item_hint() -> String:
 func get_speed_kph() -> float:
 	return Vector2(get_real_velocity().x, get_real_velocity().z).length() * 3.6
 
-func hit_hazard(kind: String, impulse: Vector3 = Vector3.ZERO) -> bool:
+func hit_hazard(kind: String) -> bool:
 	if not can_drive() or hazard_immunity > 0:
 		return false
 	hazard_hits += 1
 	hazard_immunity = 3.0
 	boosting = false
-	if kind == "coconut":
-		hazard_time = 1.5
-		current_speed = 0
-		drive_velocity = Vector3.ZERO
-		impact_velocity = Vector3.ZERO
-	else:
-		current_speed *= 0.4
-		drive_velocity *= 0.4
-		receive_impact(impulse)
+	hazard_kind = kind
+	hazard_time = HAZARD_DELAY
+	current_speed = 0
+	drive_velocity = Vector3.ZERO
+	impact_velocity = Vector3.ZERO
+	contact_velocity = Vector3.ZERO
+	velocity.x = 0
+	velocity.z = 0
 	var audio := race_manager.get_parent().get_node("RaceAudio")
 	var sound := "coconut" if kind == "coconut" else "crash"
 	if is_player:
 		audio.event(sound, player_index)
-		race_manager.announcement.emit("COCONUT BONK / 1.5s" if kind == "coconut" else "WATCH OUT / " + kind.to_upper())
+		race_manager.announcement.emit(kind.to_upper() + " / 1s DELAY")
 	else:
 		audio.event_at(sound, global_position)
 	return true
@@ -257,6 +275,8 @@ func input_prefix() -> String:
 	return ("p1_" if player_index == 0 else "p2_") if GameState.race_mode == 1 else ""
 
 func drive_controls(_delta: float) -> Dictionary:
+	if GameState.mobile_mode and GameState.mobile_input:
+		return GameState.mobile_input.controls()
 	var prefix := input_prefix()
 	return {"throttle": Input.get_axis(prefix + "move_back", prefix + "move_forward"), "steer": Input.get_axis(prefix + "turn_left", prefix + "turn_right"),
 		"drift": Input.is_action_pressed(prefix + "drift"), "boost": Input.is_action_pressed(prefix + "boost"),

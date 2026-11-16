@@ -6,6 +6,7 @@ var team_color := Color.WHITE
 var grid_index := 0
 var lane := 0.0
 var cruise_throttle := 0.88
+var pace_rank := 0
 var lap_tracker: Node
 var finished := false
 var boost_wait := 5.0
@@ -36,11 +37,11 @@ func reset_race() -> void:
 	finished = false
 	lap_tracker.reset(-0.018)
 	boost_energy = 100.0
-	boost_wait = 5.0 + grid_index * 1.5
+	boost_wait = 8.0 - pace_rank * 1.5
 	boost_left = 0.0
 	stuck_time = 0.0
 	recovery_count = 0
-	attack_wait = 3.0 + grid_index
+	attack_wait = 5.0 - pace_rank
 	var frame: Transform3D = get_parent().get_node("Track").frame_at(-0.018)
 	frame.origin += frame.basis.x * lane
 	reset_to(frame)
