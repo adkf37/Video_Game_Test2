@@ -27,7 +27,6 @@ const PANT := preload("res://assets/audio/dog_pant.ogg")
 const GLIDE := preload("res://assets/audio/runner_glide.ogg")
 const SCRAPE := preload("res://assets/audio/runner_scrape.ogg")
 const ROUGH := preload("res://assets/audio/runner_rough.ogg")
-const BREED_PITCH := [1.0, 1.22, 0.72, 1.55]
 const DOG_REACTIONS := {"go": "chorus", "boost": "yip", "pickup": "yip", "crash": "bark", "coconut": "yelp",
 	"final_lap": "howl", "finish": "chorus_howl", "overtake": "yip"}
 const SPEED_OF_SOUND := 343.0
@@ -60,13 +59,14 @@ func _ready() -> void:
 		AudioServer.add_bus()
 		var bus := AudioServer.bus_count - 1
 		AudioServer.set_bus_name(bus, "RaceMix")
-		AudioServer.add_bus_effect(bus, AudioEffectLimiter.new())
+		AudioMix.configure_master(bus)
 	if GameState.race_mode == 1:
 		_add_player_bus("RaceP1", -0.55)
 		_add_player_bus("RaceP2", 0.55)
 	for kind: String in SOUNDS:
-		streams[kind] = _randomizer(SOUNDS[kind], 1.05 if kind in VARIED else 1.0, 1.5 if kind in VARIED else 0.0)
-	barks = _randomizer(BARKS, 1.08, 1.5)
+		var varied: bool = kind in VARIED
+		streams[kind] = _randomizer(SOUNDS[kind], AudioMix.VARIANT_PITCH_SPREAD if varied else 1.0, AudioMix.VARIANT_VOLUME_SPREAD_DB if varied else 0.0)
+	barks = _randomizer(BARKS, AudioMix.DOG_BARK_SPREAD.x, AudioMix.DOG_BARK_SPREAD.y)
 	add_child(music)
 	music.bus = "RaceMix"
 	layers.stream_count = 2
@@ -86,8 +86,8 @@ func _ready() -> void:
 		var spatial := AudioStreamPlayer3D.new()
 		add_child(spatial)
 		spatial.bus = "RaceMix"
-		spatial.unit_size = 8.0
-		spatial.max_distance = 80.0
+		spatial.unit_size = AudioMix.SPATIAL_UNIT_SIZE
+		spatial.max_distance = AudioMix.SPATIAL_MAX_DISTANCE
 		spatial_voices.append(spatial)
 	add_child(listener)
 	listener.make_current()
@@ -176,17 +176,19 @@ func _lead_speed() -> float:
 func _update_mix(delta: float, state: int, paused: bool) -> void:
 	var racing: bool = state == manager.RaceState.RACING
 	var final_lap: bool = racing and (final_called[0] or final_called[1])
-	var target := 0.2
+	var target := AudioMix.INTENSITY_MENU
 	if state == manager.RaceState.COUNTDOWN:
-		target = 0.45
+		target = AudioMix.INTENSITY_COUNTDOWN
 	elif state in [manager.RaceState.RACING, manager.RaceState.FINISHED]:
-		target = 1.0 if final_lap else 0.7 + 0.3 * _lead_speed()
-	intensity = move_toward(intensity, target, delta * 0.35)
-	layers.set_sync_stream_volume(1, lerpf(-26.0, 0.0, intensity))
-	var target_db := (-19.0 if racing else -24.0) - (4.0 if duck > 0 else 0.0) - (8.0 if paused else 0.0) + (1.5 if final_lap else 0.0)
-	music.volume_db = -80 if GameState.muted else move_toward(music.volume_db, target_db, delta * 45)
-	var bed_db := (-22.0 if racing else -28.0) - (8.0 if paused else 0.0)
-	ambience.volume_db = -80 if GameState.muted else move_toward(ambience.volume_db, bed_db, delta * 30)
+		target = AudioMix.INTENSITY_FINAL_LAP if final_lap else AudioMix.INTENSITY_RACING + AudioMix.INTENSITY_SPEED_BONUS * _lead_speed()
+	intensity = move_toward(intensity, target, delta * AudioMix.INTENSITY_PER_SEC)
+	layers.set_sync_stream_volume(0, AudioMix.level("music", 0.0))
+	layers.set_sync_stream_volume(1, AudioMix.level("drums", lerpf(AudioMix.DRUMS_QUIET_DB, AudioMix.DRUMS_FULL_DB, intensity)))
+	var target_db := (AudioMix.MUSIC_RACING_DB if racing else AudioMix.MUSIC_MENU_DB) + (AudioMix.MUSIC_DUCK_DB if duck > 0 else 0.0) \
+		+ (AudioMix.MUSIC_PAUSED_DB if paused else 0.0) + (AudioMix.MUSIC_FINAL_LAP_DB if final_lap else 0.0)
+	music.volume_db = AudioMix.SILENT if GameState.muted else move_toward(music.volume_db, target_db, delta * AudioMix.MUSIC_FADE_DB_PER_SEC)
+	var bed_db := (AudioMix.AMBIENCE_RACING_DB if racing else AudioMix.AMBIENCE_MENU_DB) + (AudioMix.AMBIENCE_PAUSED_DB if paused else 0.0)
+	ambience.volume_db = AudioMix.SILENT if GameState.muted else move_toward(ambience.volume_db, AudioMix.level("ambience", bed_db), delta * AudioMix.AMBIENCE_FADE_DB_PER_SEC)
 
 func _update_listener() -> void:
 	var humans: Array = manager.players
@@ -207,7 +209,7 @@ func _update_listener() -> void:
 	listener.global_transform = Transform3D(Basis.looking_at(facing, Vector3.UP), center + Vector3.UP * 2.0)
 
 func _fade(node: Node, target: float, delta: float, snap: bool) -> void:
-	node.volume_db = target if snap else move_toward(node.volume_db, target, delta * 60.0)
+	node.volume_db = target if snap else move_toward(node.volume_db, target, delta * AudioMix.FOLEY_FADE_DB_PER_SEC)
 
 func _update_foley(delta: float, state: int, paused: bool) -> void:
 	var snap := paused or GameState.muted
@@ -220,34 +222,34 @@ func _update_foley(delta: float, state: int, paused: bool) -> void:
 		var parts: Dictionary = foley[i]
 		var norm := clampf(absf(player.current_speed) / SledTuning.BOOST_SPEED, 0, 1)
 		var drive := sqrt(norm)
-		var glide := -80.0
-		var scrape := -80.0
-		var rough := -80.0
-		var pant := -80.0
+		var glide := AudioMix.SILENT
+		var scrape := AudioMix.SILENT
+		var rough := AudioMix.SILENT
+		var pant := AudioMix.SILENT
 		var breed: int = GameState.breed if i == 0 else GameState.breed2
 		if moving and not paused and norm > 0.02:
-			glide = lerpf(-46.0, -19.0, drive) - (6.0 if player.offroad else 0.0)
-			scrape = lerpf(-30.0, -19.0, drive) if player.drifting else -80.0
-			rough = lerpf(-34.0, -19.0, drive) if player.offroad else -80.0
+			glide = lerpf(AudioMix.GLIDE_QUIET_DB, AudioMix.GLIDE_LOUD_DB, drive) - (AudioMix.GLIDE_OFFROAD_CUT_DB if player.offroad else 0.0)
+			scrape = lerpf(AudioMix.SCRAPE_QUIET_DB, AudioMix.SCRAPE_LOUD_DB, drive) if player.drifting else AudioMix.SILENT
+			rough = lerpf(AudioMix.ROUGH_QUIET_DB, AudioMix.ROUGH_LOUD_DB, drive) if player.offroad else AudioMix.SILENT
 		if panting and not paused:
-			pant = -27.0 + 7.0 * norm + linear_to_db(float(RaceCatalog.TEAM_COUNTS[breed]) / 4.0) * 0.5
-		_fade(parts.glide, glide, delta, snap)
-		_fade(parts.scrape, scrape, delta, snap)
-		_fade(parts.rough, rough, delta, snap)
-		_fade(parts.pant, pant, delta, snap)
-		parts.glide.pitch_scale = 0.8 + 0.55 * norm
-		parts.scrape.pitch_scale = 0.85 + 0.3 * norm
-		parts.rough.pitch_scale = 0.9 + 0.3 * norm
-		parts.pant.pitch_scale = sqrt(BREED_PITCH[breed]) * (0.9 + 0.25 * norm)
+			pant = AudioMix.PANT_BASE_DB + AudioMix.PANT_SPEED_RANGE_DB * norm + linear_to_db(float(RaceCatalog.TEAM_COUNTS[breed]) / 4.0) * AudioMix.PANT_TEAM_SIZE_DB
+		_fade(parts.glide, AudioMix.level("foley", glide), delta, snap)
+		_fade(parts.scrape, AudioMix.level("foley", scrape), delta, snap)
+		_fade(parts.rough, AudioMix.level("foley", rough), delta, snap)
+		_fade(parts.pant, AudioMix.level("foley", pant), delta, snap)
+		parts.glide.pitch_scale = AudioMix.GLIDE_PITCH.x + AudioMix.GLIDE_PITCH.y * norm
+		parts.scrape.pitch_scale = AudioMix.SCRAPE_PITCH.x + AudioMix.SCRAPE_PITCH.y * norm
+		parts.rough.pitch_scale = AudioMix.ROUGH_PITCH.x + AudioMix.ROUGH_PITCH.y * norm
+		parts.pant.pitch_scale = sqrt(AudioMix.BREED_PITCH[breed]) * (AudioMix.PANT_PITCH.x + AudioMix.PANT_PITCH.y * norm)
 	for rival in manager.rivals:
 		var id: int = rival.get_instance_id()
 		if not rival_foley.has(id):
 			rival_foley[id] = _make_rival_foley(rival)
 		var entry: Dictionary = rival_foley[id]
 		var norm := clampf(absf(rival.current_speed) / SledTuning.BOOST_SPEED, 0, 1)
-		var target := lerpf(-44.0, -16.0, sqrt(norm)) if moving and not paused and norm > 0.02 else -80.0
-		_fade(entry.player, target, delta, snap)
-		entry.player.pitch_scale = (0.8 + 0.55 * norm) * _doppler(rival)
+		var target := lerpf(AudioMix.RIVAL_GLIDE_QUIET_DB, AudioMix.RIVAL_GLIDE_LOUD_DB, sqrt(norm)) if moving and not paused and norm > 0.02 else AudioMix.SILENT
+		_fade(entry.player, AudioMix.level("rivals", target), delta, snap)
+		entry.player.pitch_scale = (AudioMix.RIVAL_PITCH.x + AudioMix.RIVAL_PITCH.y * norm) * _doppler(rival)
 		if rival.boosting and not entry.boosting:
 			event_at("boost", rival.global_position)
 		entry.boosting = rival.boosting
@@ -262,7 +264,7 @@ func _doppler(source: Node3D) -> float:
 	var listener_speed := 0.0
 	if not manager.players.is_empty():
 		listener_speed = manager.players[0].get_real_velocity().dot(-toward)
-	return clampf((SPEED_OF_SOUND + listener_speed) / (SPEED_OF_SOUND - source_speed), 0.85, 1.15)
+	return clampf((SPEED_OF_SOUND + listener_speed) / (SPEED_OF_SOUND - source_speed), AudioMix.DOPPLER_LIMITS.x, AudioMix.DOPPLER_LIMITS.y)
 
 func _make_foley(index: int) -> Dictionary:
 	var parts := {}
@@ -283,8 +285,8 @@ func _make_rival_foley(rival: Node3D) -> Dictionary:
 	player.bus = "RaceMix"
 	player.stream = _loop(GLIDE)
 	player.volume_db = -80
-	player.unit_size = 6.0
-	player.max_distance = 70.0
+	player.unit_size = AudioMix.RIVAL_UNIT_SIZE
+	player.max_distance = AudioMix.RIVAL_MAX_DISTANCE
 	if enabled:
 		player.play()
 	return {"player": player, "boosting": false}
@@ -317,7 +319,7 @@ func _play_dog(request: Dictionary) -> void:
 	voice.bus = _bus_for(request.player)
 	voice.stream = HOWL if request.howl else barks
 	voice.pitch_scale = request.pitch
-	voice.volume_db = request.volume
+	voice.volume_db = AudioMix.level("dogs", request.volume)
 	voice.play()
 
 # Bigger teams answer with a louder chorus, and breeds differ in pitch.
@@ -328,20 +330,20 @@ func _dog_reaction(kind: String, player_index: int) -> void:
 		return
 	cooldowns[key] = 4.0 if reaction.contains("howl") else 1.5
 	var breed: int = GameState.breed if player_index == 0 else GameState.breed2
-	var pitch: float = BREED_PITCH[breed]
+	var pitch: float = AudioMix.BREED_PITCH[breed]
 	var count := clampi(ceili(RaceCatalog.TEAM_COUNTS[breed] / 4.0), 1, 3)
 	if reaction.begins_with("chorus"):
 		for i in range(count):
-			_queue_dog(false, player_index, 0.04 + i * 0.09 + randf() * 0.05, pitch * randf_range(0.93, 1.07), -9.0 - 2.0 * i)
+			_queue_dog(false, player_index, 0.04 + i * 0.09 + randf() * 0.05, pitch * randf_range(0.93, 1.07), AudioMix.DOG_CHORUS_DB + AudioMix.DOG_CHORUS_STEP_DB * i)
 	if reaction.ends_with("howl"):
-		_queue_dog(true, player_index, 0.25 if reaction == "howl" else 0.6, pitch, -8.0)
+		_queue_dog(true, player_index, 0.25 if reaction == "howl" else 0.6, pitch, AudioMix.DOG_HOWL_DB)
 	match reaction:
 		"yip":
-			_queue_dog(false, player_index, 0.0, pitch * 1.35, -13.0)
+			_queue_dog(false, player_index, 0.0, pitch * 1.35, AudioMix.DOG_YIP_DB)
 		"bark":
-			_queue_dog(false, player_index, 0.05, pitch, -12.0)
+			_queue_dog(false, player_index, 0.05, pitch, AudioMix.DOG_BARK_DB)
 		"yelp":
-			_queue_dog(false, player_index, 0.0, pitch * 1.6, -11.0)
+			_queue_dog(false, player_index, 0.0, pitch * 1.6, AudioMix.DOG_YELP_DB)
 
 func _free_voice(pool: Array) -> Node:
 	for voice: Node in pool:
@@ -364,8 +366,8 @@ func event(kind: String, player_index: int = 0) -> void:
 	var selected := _free_voice(voices) as AudioStreamPlayer
 	selected.bus = _bus_for(player_index)
 	selected.stream = streams[kind]
-	selected.volume_db = -5 if kind in ["crash", "coconut", "pickup", "boost", "finish"] else -9
-	selected.pitch_scale = 1.03 if player_index == 1 else 1.0
+	selected.volume_db = AudioMix.level("sfx", AudioMix.event_db(kind))
+	selected.pitch_scale = AudioMix.PLAYER_TWO_PITCH if player_index == 1 else 1.0
 	selected.play()
 
 # Sounds from rivals and other sleds, heard with distance attenuation.
@@ -382,7 +384,7 @@ func event_at(kind: String, position: Vector3) -> void:
 	var selected := _free_voice(spatial_voices) as AudioStreamPlayer3D
 	selected.global_position = position
 	selected.stream = streams[kind]
-	selected.volume_db = -3
+	selected.volume_db = AudioMix.level("sfx", AudioMix.SPATIAL_SFX_DB)
 	selected.play()
 
 func _cooldown(kind: String) -> float:

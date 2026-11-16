@@ -39,6 +39,10 @@ func _run() -> void:
 				"%s has %d sound variant(s)" % [kind, sound.SOUNDS[kind].size()])
 		var sides := AudioServer.get_bus_index("RaceP1") >= 0 and AudioServer.get_bus_index("RaceP2") >= 0
 		check(sides == (race_mode == 1), "two-player races give each human a stereo side")
+		var master_bus := AudioServer.get_bus_index("RaceMix")
+		check(AudioServer.get_bus_effect_count(master_bus) == (1 if AudioMix.HIGH_SHELF_DB == 0.0 else 2) + (1 if AudioMix.LOW_PASS_HZ > 0.0 else 0),
+			"master bus processing follows AudioMix settings")
+		check(AudioMix.level("sfx", -5.0) == (AudioMix.SILENT if AudioMix.muted("sfx") else -5.0), "group mutes follow AudioMix settings")
 		check(sound.foley.size() == race.players.size() and sound.rival_foley.size() == race.rivals.size(), "sled, panting and rival loops exist")
 		for racer in get_nodes_in_group("racers"):
 			racer.set_physics_process(false)

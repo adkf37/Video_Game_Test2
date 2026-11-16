@@ -34,5 +34,5 @@ func play(kind: String) -> void:
 			selected = player
 			break
 	selected.stream = SOUNDS[kind]
-	selected.volume_db = -14.0 if kind == "hover" else -7.0
+	selected.volume_db = AudioMix.level("ui", AudioMix.UI_HOVER_DB if kind == "hover" else AudioMix.UI_DB)
 	selected.play()
